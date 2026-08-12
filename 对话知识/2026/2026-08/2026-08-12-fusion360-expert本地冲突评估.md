@@ -1,9 +1,9 @@
 ---
 type: 对话知识
 created: 2026-08-12 18:35
-updated: 2026-08-12 18:35
+updated: 2026-08-12 18:52
 source: Codex 对话
-status: 已确认
+status: 部分确认
 tags:
   - 对话知识
   - skill评估
@@ -23,6 +23,9 @@ tags:
 - 本机没有同名目录或同名 skill；`C:\Users\CLX\.codex\skills` 的本地安装模式是指向 `E:\CodexSkills` 的 junction，因此可按 `E:\CodexSkills\fusion360-expert` + `C:\Users\CLX\.codex\skills\fusion360-expert` junction 的方式安装，不会覆盖现有目录。
 - 现有相关 skill 包括 `easyeda-api`、`blender-digital-art`、`curves-surfaces-cagd` 和 `polygon-mesh-processing`。它们分别覆盖 EasyEDA 实时 API、Blender 资产、CAGD 曲线曲面算法和网格处理；与 Fusion 360 skill 是邻接/互补关系，不是文件或运行时冲突。
 - EasyEDA bridge 仍由 `127.0.0.1:7655` 的 MCP 配置和 `49620-49629` 的本地 bridge 端口承担；Fusion 360 skill 不触碰这些配置。
+- 已使用本机 skill 安装脚本将 GitHub skill 安装到 `E:\CodexSkills\fusion360-expert`，并建立 `C:\Users\CLX\.codex\skills\fusion360-expert` junction；安装内容为 `SKILL.md` 和 6 个 Markdown reference 文件。
+- 本机 Fusion 360 本体已安装且当前正在运行；Fusion API 文件存在，版本为 `2703.1.11`。
+- 当前 Fusion 360 用户 API 目录中的 `AddIns` 和 `Scripts` 均为空；Codex `config.toml` 没有 `fusion`/`autodesk`/`cad` MCP 条目，`C:\Users\CLX\.codex\mcp-servers` 也没有对应 server，当前工具列表没有 Fusion 360 MCP 工具。
 
 ## 决策与依据
 
@@ -46,6 +49,12 @@ tags:
 - 评估第三方 skill 时先分离三类冲突：名称/安装路径冲突、运行时依赖冲突、知识/触发边界冲突。
 - 对仅包含 Markdown 的 prompt skill，主要风险不是本地运行时冲突，而是错误或过时的领域建议被误当成工程规范。
 - 本机 skill 保持“E: 实体目录、C: junction 暴露”的布局；安装前必须确认目标目录不存在，并保留现有 skill 与未提交改动。
+- “Fusion 360 已安装”不等于“Fusion 360 MCP 已连接”；需要额外的 Fusion 360 Add-In/API bridge 和 Codex MCP server 配置，才能进行实时桌面模型读写。
+
+## 操作与产物
+
+- 安装产物：`E:\CodexSkills\fusion360-expert`；暴露路径：`C:\Users\CLX\.codex\skills\fusion360-expert`。
+- 诊断边界：已核对 Codex MCP 配置、MCP server 目录、Fusion 进程、Fusion API 目录、用户 AddIns/Scripts 目录及相关运行时进程；未执行 Fusion 模型修改或安装第三方 MCP。
 
 ## 关联知识
 
