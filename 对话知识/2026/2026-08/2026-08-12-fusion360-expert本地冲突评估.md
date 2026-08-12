@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-08-12 18:35
-updated: 2026-08-12 18:52
+updated: 2026-08-12 18:58
 source: Codex 对话
 status: 部分确认
 tags:
@@ -25,7 +25,7 @@ tags:
 - EasyEDA bridge 仍由 `127.0.0.1:7655` 的 MCP 配置和 `49620-49629` 的本地 bridge 端口承担；Fusion 360 skill 不触碰这些配置。
 - 已使用本机 skill 安装脚本将 GitHub skill 安装到 `E:\CodexSkills\fusion360-expert`，并建立 `C:\Users\CLX\.codex\skills\fusion360-expert` junction；安装内容为 `SKILL.md` 和 6 个 Markdown reference 文件。
 - 本机 Fusion 360 本体已安装且当前正在运行；Fusion API 文件存在，版本为 `2703.1.11`。
-- 当前 Fusion 360 用户 API 目录中的 `AddIns` 和 `Scripts` 均为空；Codex `config.toml` 没有 `fusion`/`autodesk`/`cad` MCP 条目，`C:\Users\CLX\.codex\mcp-servers` 也没有对应 server，当前工具列表没有 Fusion 360 MCP 工具。
+- 检查时 Fusion 360 用户 API 目录中的 `AddIns` 和 `Scripts` 均为空；之后已将 `FusionMCP.py` 和 `FusionMCP.manifest` 安装到 `AddIns\FusionMCP`，`Scripts` 仍为空。
 
 ## 决策与依据
 
@@ -50,11 +50,15 @@ tags:
 - 对仅包含 Markdown 的 prompt skill，主要风险不是本地运行时冲突，而是错误或过时的领域建议被误当成工程规范。
 - 本机 skill 保持“E: 实体目录、C: junction 暴露”的布局；安装前必须确认目标目录不存在，并保留现有 skill 与未提交改动。
 - “Fusion 360 已安装”不等于“Fusion 360 MCP 已连接”；需要额外的 Fusion 360 Add-In/API bridge 和 Codex MCP server 配置，才能进行实时桌面模型读写。
+- 第三方 `fusion-mcp` 暴露了 `execute_script`，可在 Fusion 进程内执行任意 Python；同时 localhost:7432 bridge 无认证。日常调用应坚持先读后写，未经明确授权不调用任意脚本、清空、删除、保存或导出工具。
 
 ## 操作与产物
 
 - 安装产物：`E:\CodexSkills\fusion360-expert`；暴露路径：`C:\Users\CLX\.codex\skills\fusion360-expert`。
-- 诊断边界：已核对 Codex MCP 配置、MCP server 目录、Fusion 进程、Fusion API 目录、用户 AddIns/Scripts 目录及相关运行时进程；未执行 Fusion 模型修改或安装第三方 MCP。
+- MCP 源码目录：`E:\CodexApps\fusion-mcp`；Python 虚拟环境：`E:\CodexApps\fusion-mcp\.venv`；本地副本将 `mcp_server\requirements.txt` 的 `mcp>=1.0.0` 收紧为 `mcp>=1.0.0,<2.0.0`，实际安装 `mcp 1.29.0` 和 `requests 2.34.2`。
+- Codex 配置已增加 `[mcp_servers.fusion360]`，使用虚拟环境 Python 启动 `mcp_server\fusion_server.py`；stdio `initialize` 和 `tools/list` 探针通过。
+- Fusion Add-In 已复制到 `%APPDATA%\Autodesk\Autodesk Fusion 360\API\AddIns\FusionMCP`；但当前 Fusion 窗口仍为“正在登录 - Autodesk Fusion”，`127.0.0.1:7432` 无监听，尚未在 Fusion UI 中运行 Add-In，因此实时连接仍待确认。
+- 诊断边界：未执行 Fusion 模型修改、删除、保存、导出或 `execute_script`。
 
 ## 关联知识
 
