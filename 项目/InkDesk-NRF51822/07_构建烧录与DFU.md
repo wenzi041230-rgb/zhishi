@@ -66,6 +66,7 @@ Full flash 是破坏性操作，不能用于需要保留其他数据的板卡。
 ## 2026-08-15 实板烧录记录
 
 - 新收到的交接压缩包与此前交接源码逐文件一致，不是新固件版本；差异仅为旧分析目录中额外存在的本地晶振测试编译产物。
+- 交接源码与 InkDesk v1.0.0 产品代码不是同一版本：交接版为原始 `epd_ble_xfer`，无产品版后续的 INFO/STATUS/CANCEL/TEST/CAPS 等扩展，且使用外部 X2 LFCLK；不要把两者的二进制、settings 或协议能力混记。
 - 产品固件 v1.0.0 重新干净构建成功，应用大小 24,524 字节，HEX 与既有交付物一致。
 - J-Link 识别到 NRF51822 XXAC / Cortex-M0，VTref 为 3.300 V；板上 S130、应用区和安全 Bootloader 均存在有效向量。
 - 采用 App-only 方式写入应用与 v6 settings，保留 S130 和 Bootloader；J-Link 编程与 Verify 均成功。
@@ -73,5 +74,8 @@ Full flash 是破坏性操作，不能用于需要保留其他数据的板卡。
 - settings 位于 `0x0003FC00`，记录 application version 6、application size `0x5FCC`、有效 App 标记。
 - 这证明目标芯片上的应用字节与构建产物一致，但不等于 BLE 空口、屏幕 5 V 或实际刷新已通过。
 - 再次执行 v1.0.0 App-only 流程时，J-Link 报告应用和 settings 已与板上内容相同并跳过写入；复位、回读仍通过，但 Windows 20 秒扫描仍未发现 `EPD_Ink`。重复烧录同一映像不能作为新的 BLE 变量。
+- 随后按用户要求切换到交接资料原始固件：交接版干净构建成功，应用大小 20,848 字节，应用 SHA-256 为 `99C9CBA7615136AEF49635531B42A14A6F429FA8B67C9DCA80E3AB81F78CAFDA`；settings 为 application version 1、length `0x5170`、App CRC `0xAA96E0A1`。
+- 交接版通过 J-Link App-only 写入应用和匹配 settings，Program/Verify 均成功；从应用区回读的 SHA-256 与构建 BIN 完全一致，证明板上当前不是 InkDesk v1.0.0，而是交接版。
+- 交接版烧录后 Windows 20 秒 BLE 扫描仍未发现 `EPD_Ink`；J-Link 400 次采样中 RADIO 有 21 次活动，频率覆盖 2、26、80 MHz 偏移并出现有效 PacketPtr。该证据证明固件内部已调度广播，不替代手机/第二适配器的空口验证。
 
 关联：[[03_固件架构与内存布局]]、[[10_交付物与安全边界]]。
