@@ -72,5 +72,6 @@ Full flash 是破坏性操作，不能用于需要保留其他数据的板卡。
 - 从 `0x0001B000` 精确回读 `0x5FCC` 字节，SHA-256 与构建 BIN 一致：`EAE536A88B661FC42A4214BE98D3D433089FDBEC43D9E839B4C41D670800985E`。
 - settings 位于 `0x0003FC00`，记录 application version 6、application size `0x5FCC`、有效 App 标记。
 - 这证明目标芯片上的应用字节与构建产物一致，但不等于 BLE 空口、屏幕 5 V 或实际刷新已通过。
+- 再次执行 v1.0.0 App-only 流程时，J-Link 报告应用和 settings 已与板上内容相同并跳过写入；复位、回读仍通过，但 Windows 20 秒扫描仍未发现 `EPD_Ink`。重复烧录同一映像不能作为新的 BLE 变量。
 
 关联：[[03_固件架构与内存布局]]、[[10_交付物与安全边界]]。
