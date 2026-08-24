@@ -5,7 +5,7 @@ tags:
   - build
   - jlink
   - dfu
-updated: 2026-08-15
+updated: 2026-08-24
 ---
 
 # 构建、烧录与 DFU
@@ -77,5 +77,13 @@ Full flash 是破坏性操作，不能用于需要保留其他数据的板卡。
 - 随后按用户要求切换到交接资料原始固件：交接版干净构建成功，应用大小 20,848 字节，应用 SHA-256 为 `99C9CBA7615136AEF49635531B42A14A6F429FA8B67C9DCA80E3AB81F78CAFDA`；settings 为 application version 1、length `0x5170`、App CRC `0xAA96E0A1`。
 - 交接版通过 J-Link App-only 写入应用和匹配 settings，Program/Verify 均成功；从应用区回读的 SHA-256 与构建 BIN 完全一致，证明板上当前不是 InkDesk v1.0.0，而是交接版。
 - 交接版烧录后 Windows 20 秒 BLE 扫描仍未发现 `EPD_Ink`；J-Link 400 次采样中 RADIO 有 21 次活动，频率覆盖 2、26、80 MHz 偏移并出现有效 PacketPtr。该证据证明固件内部已调度广播，不替代手机/第二适配器的空口验证。
+
+## 2026-08-24 V47 实板核验
+
+- V47 测试包的目标硬件和 Flash 布局与本板一致；Full HEX SHA-256 与 manifest 一致。
+- 板上 settings 已是应用版本 `0x2F`、长度 `0xDF80`。Full HEX 实际定义的 185,332 个内部 Flash 字节与板上逐字节完全一致，UICR Bootloader 地址也是 `0x3AC00`。
+- 整片备份仅在 Full HEX 未定义的 `0x3A000`–`0x3A807` 保留状态区存在 50 个字节差异。它们不是固件映像差异；强制整片擦除只会清掉持久状态。
+- 因目标板已经是完整 V47，本次保留烧录前备份后没有重复擦写。复位运行 3 秒后 PC 位于应用区，Bootloader 跳转正常。
+- 该结论只确认内部固件字节和启动路径，不替代 BLE、外置 Flash、屏幕 5 V 与实际刷新验收。
 
 关联：[[03_固件架构与内存布局]]、[[10_交付物与安全边界]]。
