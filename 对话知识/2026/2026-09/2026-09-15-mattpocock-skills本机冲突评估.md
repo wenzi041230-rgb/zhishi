@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-15 16:20
-updated: 2026-09-15 16:20
+updated: 2026-09-15 18:56
 source: Codex 对话
 status: 已确认
 tags:
@@ -25,9 +25,17 @@ tags:
 
 ## 决策与依据
 
-- 可以把仓库视为可选择的流程类 skill 集合，但不建议整套无选择安装。仓库说明 Codex 使用 `npx skills@latest add mattpocock/skills` 时可选择 skill；其 Claude 插件路线与可编辑文件路线是两种互斥安装方式。
-- 本机官方安装器在目标目录已存在时会中止，因此整套安装会在 `handoff` 处产生目标已存在问题，而不是安全地合并两个版本。
+- 用户确认后已按仓库指定提交安装全部 37 个 skill。仓库说明 Codex 使用 `npx skills@latest add mattpocock/skills` 时可选择 skill；其 Claude 插件路线与可编辑文件路线是两种互斥安装方式。
+- 本机官方安装器在目标目录已存在时会中止；此前的 `handoff` 冲突已通过备份旧实体目录、移除旧联接、安装仓库版并重建联接解决。
 - 仓库维护脚本面向 `~/.agents/skills` 并创建符号链接；本机使用的是 `~/.codex/skills` 加 `E:\CodexSkills` 实体源，不能直接运行该维护脚本。脚本还会删除同名真实目录后再建链接，不能拿来覆盖本机 skill 源。
+
+## 操作与产物
+
+- 旧本机 `handoff` 已从活动目录移出，完整备份在 `E:\CodexSkills\.backups\handoff-local-20260915`；备份前后 `SKILL.md` SHA-256 一致。
+- 仓库 commit `3cca18b368ae95cdbdebbff572ccafa662551015` 的 37 个 skill 已安装到 `E:\CodexSkills`，并建立 37 个 `C:\Users\CLX\.codex\skills` 目录联接。
+- 逐文件比对 100 个安装文件，规范化换行符后与仓库检出内容一致；没有缺失文件、额外文件或错误联接。
+- 已在 `C:\Users\CLX\.codex\AGENTS.md` 增加优先级约束：仓库 skill 在重叠能力中优先，本机 skill 仅作补充；系统/开发者规则、显式用户要求和 `obsidian-chat-memory` 仍然优先于该约束。
+- 本机旧版 `quick_validate.py` 对 22 个带 `disable-model-invocation` 或 `argument-hint` 的双平台 skill 报前置字段警告；现有本机 `handoff` 也会报同类警告，未因此修改仓库元数据。
 
 ## 重点边界
 
@@ -44,11 +52,11 @@ tags:
 
 - 第三方 skill 冲突检查应分成四层：顶层名称/安装路径、文件内容版本、隐式触发边界、运行时或项目写入行为。
 - 对本机 skill 安装，优先使用 `E:\CodexSkills` 作为实体源、`C:\Users\CLX\.codex\skills` 作为 Codex 暴露入口；安装前先检查同名目录，不覆盖已有版本。
-- 对这套仓库，推荐只选择不与本机高频流程重叠的工程 skill，先跳过 `handoff`、`domain-modeling`、`tdd`、`research`、`writing-for-agents` 和所有会改项目配置或 Git hook 的 skill，除非后续任务明确需要。
+- 已安装整套仓库 skill；后续任务按全局 `AGENTS.md` 约束选择，重叠能力优先使用仓库版，必要时再调用本机版补充。
 
 ## 待确认或待实测
 
-- 若后续决定安装，应先确定安装目标是单个项目还是 Codex 全局入口，并做隔离目录演练；本次未安装、未修改本机 skill。
+- 新安装的 skill 预计在 Codex 下一轮重新发现后可用；本次没有执行任何仓库 skill 的项目配置、Git hook、Issue 发布或密钥写入流程。
 - 仓库后续更新可能改变 skill 名称、隐式触发标记或写入行为，重新安装前应按同一四层检查复核。
 
 ## 关联知识
