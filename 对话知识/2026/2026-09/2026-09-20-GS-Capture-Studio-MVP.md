@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-20 17:09
+updated: 2026-09-20 19:04
 source: Codex 对话
 status: 部分确认
 tags:
@@ -74,6 +74,14 @@ tags:
 - 2026-09-20 只读检查确认：Python 3.12.10 可用；COLMAP、`nvidia-smi`、`nvcc`、Conda、uv、`ns-train` 均未找到；torch、gsplat、nerfstudio 均未安装。
 - 当前主机可以继续运行离线 MVP，但不能直接进行真实 COLMAP/Gaussian 重建；下一步应先选择目标机器、固定一个 Trainer 和匹配的运行时，再实施单一适配器。
 - 已新增 `docs/ENVIRONMENT_AUDIT.md`，没有擅自安装重型依赖。
+
+## 非 GPU MVP 独立验收修复
+
+- 独立验收发现并修复三类可信度问题：Builder 不再为缺失 Pose ID 自动补序号；对象形式的 Pose 输入若坐标系缺失或与 GSX 1.0 冲突会被拒绝；Viewer 只有在 `report.json` 内记录的 `scene.ply` SHA-256 与当前文件一致时才信任 synthetic/real 来源标识。
+- 相机 `width`、`height`、`fps` 和 `intrinsic.fx/fy/cx/cy` 现在要求为非布尔有限数，且尺寸与 `fx/fy` 必须为正数。
+- 增加缺失 ID、坐标系冲突、相机/Pose 非有限数、重复 ID、失败重建保留旧有效包、Viewer 报告哈希不匹配和 `reconstruction_performed=false` 等回归测试。
+- 2026-09-20 验证结果：33 个 unittest 全部通过；隔离副本运行一键验收输出 `OFFLINE MVP: PASS`，合成 `scene.ply` SHA-256 为 `7926b24bfeeb4a7ad0cb29992030bba9177bb19e58c09a6c6489b2a84a5c36c3`；缺少 COLMAP 时 strict real gate 正确拒绝。
+- 证据边界保持不变：以上只证明非 GPU 离线软件闭环和输入/来源防误标边界，不证明真实 COLMAP、Gaussian 训练、视觉质量或 GPU 性能。
 
 ## 关联知识
 
