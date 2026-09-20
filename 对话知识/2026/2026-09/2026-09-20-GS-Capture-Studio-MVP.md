@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-20 16:30
+updated: 2026-09-20 16:44
 source: Codex 对话
 status: 部分确认
 tags:
@@ -51,6 +51,15 @@ tags:
 - “代码存在”不等于“工具链已支持”；必须将软件闭环、外部工具运行、物理/视觉质量分别记录。
 - MVP 验收至少应包含：输入包校验、严格/降级模式、确定性、产物独立校验、失败不覆盖上次成功结果。
 - 下一阶段进入真实重建前，先冻结 GSX 1.0 子集、工具版本和受控数据集，再做端到端基线。
+
+## 验收方法
+
+- 先运行 `python -m unittest discover -s tests -v`，当前应为 8 个测试全部通过。
+- 再运行 `python scripts/create_demo_gsx.py`、`python gs.py validate samples/demo_room.gsx`，应看到 `valid: true`、`frame_count: 3`。
+- 运行 `python gs.py generate samples/demo_room.gsx --backend synthetic --output runtime`，检查 `report.json` 中 `result_kind: synthetic`、`reconstruction_performed: false`、`scene_ply_created: true`，并确认 `scene.ply` 含 `comment reconstruction_performed false`。
+- 将同一输入生成到两个目录并比较 `scene.ply`、`report.json` SHA-256，验证确定性。
+- 运行 `--require-real --gaussian-command "trainer"`，在未安装 COLMAP 时应返回退出码 4；这证明严格模式不会静默回退。
+- 以上通过只代表软件闭环和安全边界通过，不代表真实 COLMAP/Gaussian、GPU 性能或视觉质量通过。
 
 ## 关联知识
 
