@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-20 16:44
+updated: 2026-09-20 17:02
 source: Codex 对话
 status: 部分确认
 tags:
@@ -38,7 +38,7 @@ tags:
 - COLMAP 适配器已实现工具探测和 feature extractor / exhaustive matcher / mapper 编排；本机当前未找到 COLMAP。
 - Synthetic Gaussian backend 可生成带明确 `result_kind synthetic` 标记的 ASCII PLY，并进行 PLY 产物校验。
 - 已生成可复现的 `samples/demo_room.gsx`；CLI 已验证 `validate`、`generate` 和 `inspect`。
-- 测试结果：8 个 unittest 全部通过；重复运行 GSX、`scene.ply`、`report.json` 哈希一致。
+- 测试结果：16 个 unittest 全部通过；重复运行 GSX、`scene.ply`、`report.json` 哈希一致。
 
 ## 待确认或待实测
 
@@ -60,6 +60,13 @@ tags:
 - 将同一输入生成到两个目录并比较 `scene.ply`、`report.json` SHA-256，验证确定性。
 - 运行 `--require-real --gaussian-command "trainer"`，在未安装 COLMAP 时应返回退出码 4；这证明严格模式不会静默回退。
 - 以上通过只代表软件闭环和安全边界通过，不代表真实 COLMAP/Gaussian、GPU 性能或视觉质量通过。
+
+## 本轮收口
+
+- 新增 `scripts/verify_mvp.py` 一键离线验收，输出 `OFFLINE MVP: PASS` 和 `REAL RECONSTRUCTION: NOT TESTED`。
+- 增加 auto fallback 契约、外部工具非零退出/超时/坏产物测试，以及旧成功场景和报告不被失败运行覆盖的测试。
+- 固定退出码：0 成功，2 GSX 无效，4 严格真实模式缺工具或配置，5 外部工具失败/超时，6 外部工具产物无效。
+- 外部工具调用不下载依赖；当前 Python 3.12.10 可用，COLMAP 仍未安装。
 
 ## 关联知识
 
