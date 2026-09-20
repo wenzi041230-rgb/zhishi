@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-20 17:02
+updated: 2026-09-20 17:09
 source: Codex 对话
 status: 部分确认
 tags:
@@ -68,6 +68,12 @@ tags:
 - 增加 auto fallback 契约、外部工具非零退出/超时/坏产物测试，以及旧成功场景和报告不被失败运行覆盖的测试。
 - 固定退出码：0 成功，2 GSX 无效，4 严格真实模式缺工具或配置，5 外部工具失败/超时，6 外部工具产物无效。
 - 外部工具调用不下载依赖；当前 Python 3.12.10 可用，COLMAP 仍未安装。
+
+## 真实重建环境审计
+
+- 2026-09-20 只读检查确认：Python 3.12.10 可用；COLMAP、`nvidia-smi`、`nvcc`、Conda、uv、`ns-train` 均未找到；torch、gsplat、nerfstudio 均未安装。
+- 当前主机可以继续运行离线 MVP，但不能直接进行真实 COLMAP/Gaussian 重建；下一步应先选择目标机器、固定一个 Trainer 和匹配的运行时，再实施单一适配器。
+- 已新增 `docs/ENVIRONMENT_AUDIT.md`，没有擅自安装重型依赖。
 
 ## 关联知识
 
