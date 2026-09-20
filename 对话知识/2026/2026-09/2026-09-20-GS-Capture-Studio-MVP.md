@@ -54,12 +54,13 @@ tags:
 
 ## 验收方法
 
-- 先运行 `python -m unittest discover -s tests -v`，当前应为 8 个测试全部通过。
+- 先运行 `python -m unittest discover -s tests -v`，当前应为 16 个测试全部通过。
 - 再运行 `python scripts/create_demo_gsx.py`、`python gs.py validate samples/demo_room.gsx`，应看到 `valid: true`、`frame_count: 3`。
 - 运行 `python gs.py generate samples/demo_room.gsx --backend synthetic --output runtime`，检查 `report.json` 中 `result_kind: synthetic`、`reconstruction_performed: false`、`scene_ply_created: true`，并确认 `scene.ply` 含 `comment reconstruction_performed false`。
 - 将同一输入生成到两个目录并比较 `scene.ply`、`report.json` SHA-256，验证确定性。
 - 运行 `--require-real --gaussian-command "trainer"`，在未安装 COLMAP 时应返回退出码 4；这证明严格模式不会静默回退。
 - 以上通过只代表软件闭环和安全边界通过，不代表真实 COLMAP/Gaussian、GPU 性能或视觉质量通过。
+- 当前项目白话定义：最终要做的是“手机拍一圈现实物体或房间，电脑自动生成可旋转的 3D Gaussian 场景”；当前代码只是这套系统的电脑端引擎测试骨架，还不是手机 APP、桌面 UI 或完整产品。
 
 ## 本轮收口
 
