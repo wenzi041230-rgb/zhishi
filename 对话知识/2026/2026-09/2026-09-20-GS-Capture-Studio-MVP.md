@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 12:57
+updated: 2026-09-21 13:09
 source: Codex 对话
 status: 部分确认
 tags:
@@ -91,7 +91,11 @@ tags:
 - 已从“导入照片测试入口”改为 Camera2 后置摄像头事实采集：实时预览并连续保存 JPEG 帧，不再把文件导入当作产品采集流程。
 - 每个采集会话同步记录相机帧的 sensor timestamp、相机 ID/分辨率/帧率/内参状态，以及加速度计和陀螺仪 `imu.csv`；结束状态明确写入 `pose_available=false`。
 - 新增 `GsxCaptureWriter`：要求每帧真实整数 ID、时间戳、位置、非零四元数和固定坐标系；校验图片、相机参数、重复 ID、时间单调性后生成带 SHA-256 的 GSX，并使用临时文件替换。
-- `gradle assembleDebug` 已通过，APK 已确认包含 CAMERA 权限和主 Activity；ADB 当前没有连接设备，因此尚未做安装、启动、连续帧和 IMU 实机验证。
+- `gradle assembleDebug` 已通过，APK 已确认包含 CAMERA 权限和主 Activity。
+- 2026-09-21 在真实小米 2210132C / Android 16 设备上完成 ADB 安装、启动和摄像头采集实测：授予 CAMERA 后连续运行并停止保存，生成 594 个 JPEG 帧、594 条 `frames.csv` 帧记录、约 2102 条 IMU 数据行、`camera.json`（1920x1080、30fps、内参来自 CameraCharacteristics）和 `capture_status.json`；应用界面确认会话已保存，未观察到崩溃。
+- 对实机会话做了离线一致性复核：`frames.csv` 为 1 行表头 + 594 行数据，JPEG 文件为 594 个；所有引用路径均存在且无多余帧，帧 ID 连续，Camera sensor timestamp 唯一且严格递增，JPEG 文件均非零长度。
+- 实机证据只确认“真实 Camera2 流 + 相机时间戳 + IMU 原始记录 + 本地会话落盘”可用；`pose_available=false` 且状态为 `UNAVAILABLE_ARCORE_NOT_CONNECTED`，所以仍不能导出有效 GSX，也没有证明真实 COLMAP/Gaussian 重建。
+- GPT-5.6-sol 高思考独立验收结论：原始相机帧 + IMU 子功能通过实机冒烟验收；完整 Android 摄像头采集 MVP 不通过，P0 原因是没有逐帧真实相机位姿。下一项最高价值工作是接入 ARCore Pose 并完成帧、Pose、IMU 的时间关联和 GSX 严格校验。
 - ARCore Pose 适配器仍未接入，当前原始摄像头流不是可直接导出的有效 GSX；不能把当前 Android 骨架称为完整手机采集 APP。
 
 ## 关联知识
