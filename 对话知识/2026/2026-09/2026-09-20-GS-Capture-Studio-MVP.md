@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 11:35
+updated: 2026-09-21 12:57
 source: Codex 对话
 status: 部分确认
 tags:
@@ -44,7 +44,7 @@ tags:
 
 - 指定版本的 COLMAP、CUDA、PyTorch 和具体 Gaussian trainer 尚未安装或冻结。
 - 真实图片集上的相机位姿、稀疏重建、训练、模型质量、GPU 性能和失败诊断均未验收。
-- Android Camera2/ARCore/IMU 采集、PC Studio 和安装包属于后续里程碑；GSX Builder 与无 GPU 预览器已完成离线 MVP 验收范围。
+- Android ARCore Pose、PC Studio 和安装包属于后续里程碑；Camera2 连续帧/相机记录/IMU 原始采集骨架、GSX Builder 与无 GPU 预览器已完成代码构建范围。
 
 ## 可复用知识
 
@@ -88,10 +88,11 @@ tags:
 ## Android 非 GPU 骨架
 
 - 新增 `mobile/` Android 工程，使用本机 JDK 17、Gradle 和 Android SDK 36 构建。
-- 当前可从系统文件选择器导入照片到应用私有采集草稿目录；界面明确显示“没有真实 Pose 就不能导出有效 GSX”。
+- 已从“导入照片测试入口”改为 Camera2 后置摄像头事实采集：实时预览并连续保存 JPEG 帧，不再把文件导入当作产品采集流程。
+- 每个采集会话同步记录相机帧的 sensor timestamp、相机 ID/分辨率/帧率/内参状态，以及加速度计和陀螺仪 `imu.csv`；结束状态明确写入 `pose_available=false`。
 - 新增 `GsxCaptureWriter`：要求每帧真实整数 ID、时间戳、位置、非零四元数和固定坐标系；校验图片、相机参数、重复 ID、时间单调性后生成带 SHA-256 的 GSX，并使用临时文件替换。
-- `gradle assembleDebug` 已通过，生成 debug APK；ADB 当前没有连接设备，因此尚未做安装、启动和手机实际导入验证。
-- Camera2/ARCore/IMU 适配器仍未接入，不能把当前 Android 骨架称为完整手机采集 APP。
+- `gradle assembleDebug` 已通过，APK 已确认包含 CAMERA 权限和主 Activity；ADB 当前没有连接设备，因此尚未做安装、启动、连续帧和 IMU 实机验证。
+- ARCore Pose 适配器仍未接入，当前原始摄像头流不是可直接导出的有效 GSX；不能把当前 Android 骨架称为完整手机采集 APP。
 
 ## 关联知识
 
