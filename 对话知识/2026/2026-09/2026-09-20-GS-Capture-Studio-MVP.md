@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 13:33
+updated: 2026-09-21 13:56
 source: Codex 对话
 status: 部分确认
 tags:
@@ -106,6 +106,16 @@ tags:
 - `pm path com.google.ar.core`、普通包列表和包含卸载包的列表均未发现 `com.google.ar.core`，因此 ARCore 运行时未安装。
 - 严格结论：Android 构建 OK，37 项 Python 契约测试 OK，ARCore Pose 端到端验收 NG。没有执行解锁后的真实采集，不得记为 OK。
 - 解锁后的最小重测：确认 ARCore 包已安装并可用；前台启动 APP 且无崩溃；完成一次有位移和转动的真实采集；确认图像、Pose、IMU 均有数据并完成时间关联；确认 `pose_available=true`、`pose_complete=true`、无待匹配帧；生成 `capture.gsx` 后用 Python Validator 验证通过，并抽查 Pose 为有限数、四元数非零、时间戳严格递增、引用图片和 SHA-256 一致。
+
+## ARCore Pose 真机重测与 MVP 放行
+
+- 设备为真实小米 2210132C / Android 16，ADB serial 为 `9ec40c76`；官方 ARCore 1.56.262080393 已通过手机系统安装器安装。安装包来源和校验记录：`Google_Play_Services_for_AR_1.56.0.apk`，SHA-256 `8C6DAC408FF9320515CE105FB17E3F76087762B6B7AD05B6DA49030FEE3839B6`。由于设备对 ADB 直接安装返回 `INSTALL_FAILED_USER_RESTRICTED`，没有绕过系统安全策略。
+- 首次 ARCore SharedCamera 真机测试为 NG：相机有 3 张图像但没有 Pose，随后出现 MIUI camera pipeline force disconnect；确认不是“缺少 ARCore”而是额外 TextureView 预览面导致的共享流组合不兼容。
+- 修复内容：按官方 SharedCamera 结构改为 ARCore 外部纹理作为可见预览、仅增加 CPU `ImageReader` 采集面；将 SurfaceTexture listener 延后到 ARCore resume 后；增加空值保护；将 `image_count` 定义为真正写入且已匹配 Pose 的图像数，并单独记录 `source_image_count`、`unmatched_image_count`。
+- 最新真机会话 `session-1789969989290`：`image_count=73`、`frame_count=73`、`pose_frame_count=73`、`pose_available=true`、`pose_complete=true`、`pose_status=TRACKING`、`gsx_exported=true`；同时保存 `source_image_count=288`、`unmatched_image_count=215`、`imu.csv` 1015 条数据行。未匹配源图像不进入 GSX，不能宣称无丢帧或完整保存视频流。
+- 真机端界面显示 OK，生成 `capture.gsx`，文件大小 4,363,802 bytes。主机侧 SHA-256 为 `8933B8AFAFA03319312D32EACA7713B34CCF67B0A205CA24591B9EAACDB4A9F6`；项目验证器返回 `valid=true`、`errors=[]`、`frame_count=73`、`checked_files=75`。
+- 独立数据复核：73 条 `frames.csv` 数据行与 73 个 JPEG 一一对应；ID 连续；图像时间戳严格递增；最大图像/Pose 时间差 4,405,802 ns，小于 5 ms；位置、四元数均为有限数，最小四元数范数约 0.9999999；IMU 数据行非空。
+- GPT-5.6-sol 高思考独立最终验收：**OK（范围限定）**。通过的是“实时摄像头 + ARCore Pose + GSX 导出 MVP”；`pending_image_count=120` 不阻止本次放行，因为交付物只包含 73 个成功配对帧，未匹配源图像已单独披露。剩余边界：当前 GSX 未打包 `imu.csv`，只证明会话目录保存了 IMU；COLMAP、Gaussian 训练、GPU 渲染和真实 Gaussian 重建仍未验收。
 
 ## 关联知识
 
