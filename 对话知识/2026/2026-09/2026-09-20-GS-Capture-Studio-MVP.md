@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-20 19:04
+updated: 2026-09-21 11:23
 source: Codex 对话
 status: 部分确认
 tags:
@@ -38,13 +38,13 @@ tags:
 - COLMAP 适配器已实现工具探测和 feature extractor / exhaustive matcher / mapper 编排；本机当前未找到 COLMAP。
 - Synthetic Gaussian backend 可生成带明确 `result_kind synthetic` 标记的 ASCII PLY，并进行 PLY 产物校验。
 - 已生成可复现的 `samples/demo_room.gsx`；CLI 已验证 `validate`、`generate` 和 `inspect`。
-- 测试结果：16 个 unittest 全部通过；重复运行 GSX、`scene.ply`、`report.json` 哈希一致。
+- 测试结果：37 个 unittest 全部通过；重复运行 GSX、`scene.ply`、`report.json` 哈希一致。
 
 ## 待确认或待实测
 
 - 指定版本的 COLMAP、CUDA、PyTorch 和具体 Gaussian trainer 尚未安装或冻结。
 - 真实图片集上的相机位姿、稀疏重建、训练、模型质量、GPU 性能和失败诊断均未验收。
-- Android Camera2/ARCore/IMU 采集、GSX Builder、PC Studio、Viewer 和安装包属于后续里程碑。
+- Android Camera2/ARCore/IMU 采集、PC Studio 和安装包属于后续里程碑；GSX Builder 与无 GPU 预览器已完成离线 MVP 验收范围。
 
 ## 可复用知识
 
@@ -54,7 +54,7 @@ tags:
 
 ## 验收方法
 
-- 先运行 `python -m unittest discover -s tests -v`，当前应为 16 个测试全部通过。
+- 先运行 `python -m unittest discover -s tests -v`，当前应为 37 个测试全部通过。
 - 再运行 `python scripts/create_demo_gsx.py`、`python gs.py validate samples/demo_room.gsx`，应看到 `valid: true`、`frame_count: 3`。
 - 运行 `python gs.py generate samples/demo_room.gsx --backend synthetic --output runtime`，检查 `report.json` 中 `result_kind: synthetic`、`reconstruction_performed: false`、`scene_ply_created: true`，并确认 `scene.ply` 含 `comment reconstruction_performed false`。
 - 将同一输入生成到两个目录并比较 `scene.ply`、`report.json` SHA-256，验证确定性。
@@ -77,11 +77,13 @@ tags:
 
 ## 非 GPU MVP 独立验收修复
 
-- 独立验收发现并修复三类可信度问题：Builder 不再为缺失 Pose ID 自动补序号；对象形式的 Pose 输入若坐标系缺失或与 GSX 1.0 冲突会被拒绝；Viewer 只有在 `report.json` 内记录的 `scene.ply` SHA-256 与当前文件一致时才信任 synthetic/real 来源标识。
-- 相机 `width`、`height`、`fps` 和 `intrinsic.fx/fy/cx/cy` 现在要求为非布尔有限数，且尺寸与 `fx/fy` 必须为正数。
+- 独立验收发现并修复四类可信度问题：Builder 不再为缺失 Pose ID 自动补序号；对象形式的 Pose 输入若坐标系缺失或与 GSX 1.0 冲突会被拒绝；Viewer 只有在 `report.json` 内记录的 `scene.ply` SHA-256 与当前文件一致时才信任 synthetic/real 来源标识；相机字段补齐类型和有限数校验。
+- 相机 `width`、`height` 现在要求为正整数，`fps` 和 `intrinsic.fx/fy/cx/cy` 要求为非布尔有限数，且 `fx/fy` 必须为正数。
 - 增加缺失 ID、坐标系冲突、相机/Pose 非有限数、重复 ID、失败重建保留旧有效包、Viewer 报告哈希不匹配和 `reconstruction_performed=false` 等回归测试。
-- 2026-09-20 验证结果：33 个 unittest 全部通过；隔离副本运行一键验收输出 `OFFLINE MVP: PASS`，合成 `scene.ply` SHA-256 为 `7926b24bfeeb4a7ad0cb29992030bba9177bb19e58c09a6c6489b2a84a5c36c3`；缺少 COLMAP 时 strict real gate 正确拒绝。
+- 复核追加发现并修复两个边界：超大整数转浮点时捕获 `OverflowError` 并正常报告无效；scene/report 改为成对暂存、备份和回滚，报告暂存失败不会留下新场景与旧报告的混合状态。
+- 2026-09-20 验证结果：37 个 unittest 全部通过；一键验收输出 `OFFLINE MVP: PASS` 和 `REAL RECONSTRUCTION: NOT TESTED`，合成 `scene.ply` SHA-256 为 `7926b24bfeeb4a7ad0cb29992030bba9177bb19e58c09a6c6489b2a84a5c36c3`；缺少 COLMAP 时 strict real gate 正确拒绝；`compileall` 通过。
 - 证据边界保持不变：以上只证明非 GPU 离线软件闭环和输入/来源防误标边界，不证明真实 COLMAP、Gaussian 训练、视觉质量或 GPU 性能。
+- 2026-09-21 重新运行 37 个测试、一键离线验收和 `compileall`，结果保持通过。最后一次 GPT-5.6-sol 高思考独立验收因账户用量限制未完成，未将其计入验收证据；非 GPU 结论仍以本地测试和验收脚本为准，真实重建仍待后续环境验收。
 
 ## 关联知识
 
