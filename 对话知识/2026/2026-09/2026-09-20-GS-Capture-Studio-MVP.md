@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 13:09
+updated: 2026-09-21 13:33
 source: Codex 对话
 status: 部分确认
 tags:
@@ -96,7 +96,16 @@ tags:
 - 对实机会话做了离线一致性复核：`frames.csv` 为 1 行表头 + 594 行数据，JPEG 文件为 594 个；所有引用路径均存在且无多余帧，帧 ID 连续，Camera sensor timestamp 唯一且严格递增，JPEG 文件均非零长度。
 - 实机证据只确认“真实 Camera2 流 + 相机时间戳 + IMU 原始记录 + 本地会话落盘”可用；`pose_available=false` 且状态为 `UNAVAILABLE_ARCORE_NOT_CONNECTED`，所以仍不能导出有效 GSX，也没有证明真实 COLMAP/Gaussian 重建。
 - GPT-5.6-sol 高思考独立验收结论：原始相机帧 + IMU 子功能通过实机冒烟验收；完整 Android 摄像头采集 MVP 不通过，P0 原因是没有逐帧真实相机位姿。下一项最高价值工作是接入 ARCore Pose 并完成帧、Pose、IMU 的时间关联和 GSX 严格校验。
-- ARCore Pose 适配器仍未接入，当前原始摄像头流不是可直接导出的有效 GSX；不能把当前 Android 骨架称为完整手机采集 APP。
+- ARCore SharedCamera/Pose 适配代码已接入并可完成 Android 构建，但尚未在解锁且安装 ARCore 运行时的手机上完成真实 Pose 采集；不能把当前 Android 骨架称为完整手机采集 APP。
+
+## ARCore Pose 本轮严格验收
+
+- 2026-09-21 重新执行 Android `assembleDebug`，结果为 `BUILD SUCCESSFUL`；仅证明 APK 可以构建。
+- 重新执行 Python 契约测试，37/37 全部通过；仅证明 GSX/Builder/Pipeline/Viewer 的离线契约保持通过。
+- ADB 显示采集 APP 进程和 `MainActivity` 仍存在，但窗口焦点是 `NotificationShade`，同时 `mDreamingLockscreen=true`、`isKeyguardShowing=true`；这只能证明进程未退出，不能证明相机预览、ARCore TRACKING 或 Pose 采集成功。
+- `pm path com.google.ar.core`、普通包列表和包含卸载包的列表均未发现 `com.google.ar.core`，因此 ARCore 运行时未安装。
+- 严格结论：Android 构建 OK，37 项 Python 契约测试 OK，ARCore Pose 端到端验收 NG。没有执行解锁后的真实采集，不得记为 OK。
+- 解锁后的最小重测：确认 ARCore 包已安装并可用；前台启动 APP 且无崩溃；完成一次有位移和转动的真实采集；确认图像、Pose、IMU 均有数据并完成时间关联；确认 `pose_available=true`、`pose_complete=true`、无待匹配帧；生成 `capture.gsx` 后用 Python Validator 验证通过，并抽查 Pose 为有限数、四元数非零、时间戳严格递增、引用图片和 SHA-256 一致。
 
 ## 关联知识
 
