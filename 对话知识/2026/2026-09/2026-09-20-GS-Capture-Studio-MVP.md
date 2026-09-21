@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 14:18
+updated: 2026-09-21 15:05
 source: Codex 对话
 status: 部分确认
 tags:
@@ -124,6 +124,16 @@ tags:
 - 2026-09-21 真机重测会话 `session-1789970977358`：`image_count=137`、`source_image_count=437`、`unmatched_image_count=300`、`frame_count=137`、`pose_frame_count=137`、`pose_complete=true`、`pose_status=TRACKING`、`pending_image_count=120`、`imu.csv` 1521 条数据行、`gsx_exported=true`。手机界面显示 OK，采集期间无崩溃和 ImageReader 堵死。
 - 主机侧 GSX SHA-256：`2255729F6DAB6ED32731F420DDA02E0425A752AF6AAF5911BFBD669B6DC105A9`；验证器返回 `valid=true`、`errors=[]`、`frame_count=137`、`checked_files=139`。数据复核通过：137 条 Pose 对齐记录、ID 连续、时间戳严格递增、最大 Pose 匹配误差 4,405,802 ns、小于 5 ms、数值有限、最小四元数范数约 0.9999999、IMU 非空。
 - GPT-5.6-sol 高思考独立验收：**OK（有限放行）**。本轮只能宣称“摄像头 + ARCore Pose + IMU 原始记录 + 有效 GSX 导出”通过；不能宣称无丢帧或停止后所有图像均排空，437 个源图像中只有 137 个进入 GSX，`pending_image_count=120` 已披露为当前 MVP 非阻塞边界。GPU、COLMAP、Gaussian 训练和真实三维重建仍未验收。
+
+## PC 接收与自动质量报告
+
+- 新增 `scripts/import_android_capture.py`：通过 `adb exec-out run-as com.gscapture.mobile cat` 从 Android 私有目录接收指定或最新完整 `session-*`，先写入 `.partial` 目录，所有文件接收成功后再原子改名；ADB 失败会清理半成品，不覆盖已有会话。
+- 新增 `engine/capture_report.py` 和 `tests/test_capture_report.py`：检查 Camera 参数、`frames.csv`、JPEG 引用与数量、Pose 有限数/四元数/时间差、IMU、状态字段、GSX Validator，并读取 `transfer_manifest.json` 逐文件验证存在性、字节数、SHA-256、重复路径、覆盖范围和必需文件。
+- 返工前独立验收发现两个 P1：报告未验证传输清单，且未交叉核对 CSV/JPEG/状态/GSX 帧数；已补齐并增加哈希篡改、跨文件数量不一致测试。返工后 Python 测试为 42/42，`compileall` 通过。
+- 使用真实小米会话 `session-1789970977358` 完成 PC 接收：传输清单与实际载荷均为 142 个文件，逐文件哈希/字节复核无错误；质量报告 `PASS`，`frames.csv`、JPEG、状态三项计数和 GSX `frame_count` 均为 137，IMU 为 1521 行，最大图像/Pose 时间差 4,405,802 ns，GSX `valid=true`、`errors=[]`、`checked_files=139`。
+- 质量报告明确警告 437 个源图像中 300 个未匹配、120 个待处理；因此不能宣称无丢帧。GSX 本身仍未打包 IMU，原始 IMU 在会话目录 `records/imu.csv`；当前结果不代表 COLMAP、Gaussian 训练、GPU 渲染或真实三维重建。
+- 第二次尝试重新接收时 ADB 设备瞬时消失，脚本正确失败且没有留下 `.partial`；已有真实接收会话经返工后的报告程序重新验证通过，不需要重新采集。
+- GPT-5.6-sol 高思考第二次独立验收：**OK（限定范围放行）**；确认两个 P1 已修复，允许进入下一步非 GPU 工作。
 
 ## 关联知识
 
