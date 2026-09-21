@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 13:56
+updated: 2026-09-21 14:18
 source: Codex 对话
 status: 部分确认
 tags:
@@ -116,6 +116,14 @@ tags:
 - 真机端界面显示 OK，生成 `capture.gsx`，文件大小 4,363,802 bytes。主机侧 SHA-256 为 `8933B8AFAFA03319312D32EACA7713B34CCF67B0A205CA24591B9EAACDB4A9F6`；项目验证器返回 `valid=true`、`errors=[]`、`frame_count=73`、`checked_files=75`。
 - 独立数据复核：73 条 `frames.csv` 数据行与 73 个 JPEG 一一对应；ID 连续；图像时间戳严格递增；最大图像/Pose 时间差 4,405,802 ns，小于 5 ms；位置、四元数均为有限数，最小四元数范数约 0.9999999；IMU 数据行非空。
 - GPT-5.6-sol 高思考独立最终验收：**OK（范围限定）**。通过的是“实时摄像头 + ARCore Pose + GSX 导出 MVP”；`pending_image_count=120` 不阻止本次放行，因为交付物只包含 73 个成功配对帧，未匹配源图像已单独披露。剩余边界：当前 GSX 未打包 `imu.csv`，只证明会话目录保存了 IMU；COLMAP、Gaussian 训练、GPU 渲染和真实 Gaussian 重建仍未验收。
+
+## 采集线程优化重测
+
+- 为降低相机线程被 JPEG 压缩拖慢的问题，尝试过两种方案并按真机结果处理：保留 `Image` 对象到匹配队列会导致 ImageReader `acqCount` 达到上限并堵死相机，判定 NG；强制 15 FPS 会导致本机 ARCore 无法得到 Pose，判定 NG，均已撤回。
+- 最终保留方案：恢复已验证的 30 FPS SharedCamera 参数；相机线程只复制 YUV 到 NV21，JPEG 压缩转移到独立编码线程；编码队列上限为 4，停止时等待编码队列完成后再写会话状态；不再持有未关闭的 `Image` 对象。
+- 2026-09-21 真机重测会话 `session-1789970977358`：`image_count=137`、`source_image_count=437`、`unmatched_image_count=300`、`frame_count=137`、`pose_frame_count=137`、`pose_complete=true`、`pose_status=TRACKING`、`pending_image_count=120`、`imu.csv` 1521 条数据行、`gsx_exported=true`。手机界面显示 OK，采集期间无崩溃和 ImageReader 堵死。
+- 主机侧 GSX SHA-256：`2255729F6DAB6ED32731F420DDA02E0425A752AF6AAF5911BFBD669B6DC105A9`；验证器返回 `valid=true`、`errors=[]`、`frame_count=137`、`checked_files=139`。数据复核通过：137 条 Pose 对齐记录、ID 连续、时间戳严格递增、最大 Pose 匹配误差 4,405,802 ns、小于 5 ms、数值有限、最小四元数范数约 0.9999999、IMU 非空。
+- GPT-5.6-sol 高思考独立验收：**OK（有限放行）**。本轮只能宣称“摄像头 + ARCore Pose + IMU 原始记录 + 有效 GSX 导出”通过；不能宣称无丢帧或停止后所有图像均排空，437 个源图像中只有 137 个进入 GSX，`pending_image_count=120` 已披露为当前 MVP 非阻塞边界。GPU、COLMAP、Gaussian 训练和真实三维重建仍未验收。
 
 ## 关联知识
 
