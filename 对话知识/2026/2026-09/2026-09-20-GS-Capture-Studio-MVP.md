@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 11:23
+updated: 2026-09-21 11:35
 source: Codex 对话
 status: 部分确认
 tags:
@@ -84,6 +84,14 @@ tags:
 - 2026-09-20 验证结果：37 个 unittest 全部通过；一键验收输出 `OFFLINE MVP: PASS` 和 `REAL RECONSTRUCTION: NOT TESTED`，合成 `scene.ply` SHA-256 为 `7926b24bfeeb4a7ad0cb29992030bba9177bb19e58c09a6c6489b2a84a5c36c3`；缺少 COLMAP 时 strict real gate 正确拒绝；`compileall` 通过。
 - 证据边界保持不变：以上只证明非 GPU 离线软件闭环和输入/来源防误标边界，不证明真实 COLMAP、Gaussian 训练、视觉质量或 GPU 性能。
 - 2026-09-21 重新运行 37 个测试、一键离线验收和 `compileall`，结果保持通过。最后一次 GPT-5.6-sol 高思考独立验收因账户用量限制未完成，未将其计入验收证据；非 GPU 结论仍以本地测试和验收脚本为准，真实重建仍待后续环境验收。
+
+## Android 非 GPU 骨架
+
+- 新增 `mobile/` Android 工程，使用本机 JDK 17、Gradle 和 Android SDK 36 构建。
+- 当前可从系统文件选择器导入照片到应用私有采集草稿目录；界面明确显示“没有真实 Pose 就不能导出有效 GSX”。
+- 新增 `GsxCaptureWriter`：要求每帧真实整数 ID、时间戳、位置、非零四元数和固定坐标系；校验图片、相机参数、重复 ID、时间单调性后生成带 SHA-256 的 GSX，并使用临时文件替换。
+- `gradle assembleDebug` 已通过，生成 debug APK；ADB 当前没有连接设备，因此尚未做安装、启动和手机实际导入验证。
+- Camera2/ARCore/IMU 适配器仍未接入，不能把当前 Android 骨架称为完整手机采集 APP。
 
 ## 关联知识
 
