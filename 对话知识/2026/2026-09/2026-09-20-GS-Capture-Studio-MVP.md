@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-22 11:45
+updated: 2026-09-22 16:10
 source: Codex 对话
 status: 部分确认
 tags:
@@ -164,6 +164,16 @@ tags:
 - PC 接收与质量报告通过：557/557 文件传输和哈希校验通过；`frames.csv`、JPEG、状态、GSX 均为 552 帧；GSX `valid=true`、`errors=[]`；包内 IMU 与会话 IMU SHA-256 相同（`5a2d8f5d19aad27e952f5d35ff3393d5a4863e7321c0bfa28841c96f9edb05a3`）；IMU 共 4078 行。
 - 本轮本地验收：Python unittest 47/47 通过，`compileall` 通过，Android `:app:assembleDebug` 成功；独立复核确认 Pose 数值有限、四元数范数约为 1、帧 ID 连续、时间戳递增，`capture.gsx` 验证通过。
 - 放行边界：以上只证明“真实摄像头 + ARCore Pose 的时间关联与 GSX/PC 接收链路”在一次约 38 秒真机运行中通过，不能宣称 3 次重复、5 分钟稳定性、无源帧丢弃，也不能宣称 COLMAP、Gaussian、GPU 或真实三维重建已完成。最终 GPT-5.6-sol 独立验收因账户用量限制未完成，未将其伪装为验收证据；本次结论以真机、PC 报告和本地测试为依据。
+
+## ARCore 同帧采集长测验收
+
+- 为消除独立图像流与 Pose 流的会话相位不稳定，采集路径改为从同一个 ARCore `Frame` 调用 `Frame.acquireCameraImage()`，并使用该 Frame 的真实 Pose；图像复制完成后立即关闭，JPEG 继续进入有界编码队列。
+- 三次 35–60 秒真机重复均通过：图像获取/保存分别为 605/605、605/605、600/600，最大图像-Pose 时间差分别为 0.656 ms、0.891 ms、1.119 ms；队列、pending、淘汰和输出空洞均为 0，GSX、IMU 和传输完整性均通过。
+- 第一次约 5 分钟测试采集了 7627 帧，但旧版 GSX writer 在停止导出时将全部图片读入内存并发生 OOM；该轮判定 NG，不能用采集计数掩盖导出失败。writer 随后改为逐文件流式计算哈希和写 ZIP。
+- 修复后约 5 分钟会话 `session-1790066449931`：eligible 4994、acquired 4993、not available 1、copy failure 0，图像/源帧/帧/Pose/JPEG/GSX 均为 4993；直接获取率 99.97998%，取得图像后的保存率 100%，最大图像-Pose 时间差 1.699598 ms，最大输出间隔 199.857708 ms。
+- 该长测编码、队列、pending、Pose 淘汰、无 Pose 和未解释计数均为 0；Pose 为 `TRACKING` 且 complete，GSX 有效，包内外 IMU SHA-256 一致，传输清单有效，`gsx_exported=true`，停止和导出后应用进程仍存活。
+- 独立验收结论：**PASS（范围限定）**。唯一一次 `direct_camera_image_not_available` 是已分类、可计量的暂时不可用，不是复制/编码/队列/导出失败；直接获取率仍显著高于 95% 门槛，也没有造成超过 250 ms 的输出空洞，因此 warning 不改变总体验收等级，不需要降为 conditional PASS。
+- 放行范围仅为“真实手机摄像头 + 同帧 ARCore Pose + IMU + GSX 导出 + PC 接收完整性与约 5 分钟稳定性”。不能据此宣称 COLMAP、Gaussian 训练、GPU 渲染、视觉重建质量或完整产品 V1.0 已通过。
 
 ## 关联知识
 
