@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-22 10:14
-updated: 2026-09-22 10:14
+updated: 2026-09-22 10:41
 source: Codex 对话
 status: 部分确认
 tags:
@@ -64,6 +64,17 @@ tags:
 - 当前没有分项计数，尚不能给出 718 中队列满、Pose 缺口、固定缓存淘汰和停止未决各自的精确数量。
 - 未提供 JPEG 编码耗时、队列深度时间分布、NV21 占用和设备热状态，暂不能证明 quality 85 或更大队列必然必要。
 - 未提供 Camera capture-result 与 ImageReader 图像的一一对应证据，`acquireLatestImage` 上游合并量仍未知。
+
+## 第一轮真机结果与下一步决策
+
+- 真机会话 `session-1790044177576` 约 40 秒：`source=1187`、`policy_selected=581`、`policy_skipped=606`、`encode_submitted=581`、`jpeg_encoded=581`、`encode_queue_drop=0`、`pose_sample=553`、`matched=253`、`selected_unmatched=328`、`no_pose_in_window=328`、`pending_queue_evicted=0`、`pending_at_stop=0`、`pose_queue_evicted=181`；成功匹配最大 Pose 差为 3.99 ms。
+- 账本已闭合到关键故障桶：`source = policy_selected + policy_skipped`，`policy_selected = matched + no_pose_in_window`；入选帧编码成功率 100%，本轮不再支持“JPEG 吞吐或编码队列是主要瓶颈”。失败集中在图像与 Pose 时间关联。
+- 固定时间戳 15 FPS 的入选速率约 14.5 FPS，而 Pose 样本约 13.8 FPS。若要求一帧使用一个真实且唯一的 Pose，581 个独立入选帧对 553 个 Pose 样本本身就不支持 99% 固定入选帧覆盖；验收分母应改为 Pose 可用候选，不能靠重复 Pose 或凭空补 Pose 达成指标。
+- 明确下一步：保持已实测协议不变，再做一次 35–60 秒诊断采集，优先测量所有失败入选帧到最近 Pose 的绝对与有符号时间差、前后包围 Pose 间隔、TRACKING 状态、Pose 时间间隔分布和 Pose 复用情况。最新 `no_pose_delta_min/p95/max` 是必要起点，但应补 p50/p99、分桶和有符号方向，避免三个汇总值掩盖相位峰。
+- 若至少 95% 失败帧仅略超窗口（最近 Pose 距离不超过 8 ms，p99 不超过 10 ms，且无约 16–33 ms 的帧周期峰），才允许做 `±5 ms → ±8 ms` 的单变量 A/B，硬上限先不超过 10 ms。
+- 若失败距离在 10 ms 以上形成明显分布，尤其聚集在半帧或一帧周期，优先改成 Pose 驱动的候选选择：保持 Camera2/ARCore 已验证的约 30 FPS，由真实 TRACKING Pose 选择最近且未消费的图像候选，仍以严格时间差门槛保存。不要先扩大到可跨相邻相机帧的时间窗。
+- 若失败项没有前后 TRACKING Pose、Pose 间隔长或存在跟踪中断，既不能靠扩窗，也不能直接插值；先修 Pose 生产/调度或跟踪连续性。插值只作为更后面的受控实验，必须使用同一连续 TRACKING 段的双侧 Pose、记录派生来源，并通过留一法真值对照和真实重建质量比较后才可放行。
+- 采集层验收：逐会话账本 `unexplained=0`、最终 pending 为 0、编码/队列失败为 0、Pose 驱动候选匹配保存率至少 99%、图像与 Pose 一一对应且不复用 Pose、最大时间差不超过所选严格门槛；至少 3 次 35–60 秒和 1 次 5 分钟持续采集均成立。该门禁只证明真实 Pose 采集链路，不等同于 COLMAP/Gaussian 真实重建通过。
 
 ## 关联知识
 
