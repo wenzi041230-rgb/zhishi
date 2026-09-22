@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-22 10:20
+updated: 2026-09-22 11:45
 source: Codex 对话
 status: 部分确认
 tags:
@@ -154,6 +154,16 @@ tags:
 - `engine/capture_report.py` 新增分项账本和 Markdown 展示；旧会话仍兼容但会提示缺少诊断计数。新增回归测试覆盖分项计数报告。
 - 第一轮修复已完成静态验收：Python unittest `47/47` 通过，`compileall` 通过，Android `gradle :app:assembleDebug` 构建成功，APK 已安装到真实小米 2210132C（ADB `9ec40c76`）。
 - 真机重测尚未完成：设备当前处于锁屏，应用窗口被 `NotificationShade`/Keyguard 遮挡，不能安全开始摄像头采集；因此本轮不能宣称“未匹配问题已解决”。解锁后的验收门槛为：主动选中帧 `queue_full_drop=0`、编码/Pose失败均可解释、最终 `pending=0`、选中帧保存率至少 99%、分项账本 `unexplained=0`，并完成至少一次 35–60 秒真实采集后再决定是否做 JPEG quality 85 A/B。
+
+## Pose 驱动时间关联修复与限定放行
+
+- 2026-09-22 先对会话 `session-1790044735875` 做失败距离统计：未在 ±5 ms 内找到 Pose 的图像，其最近 Pose 距离最小约 5.022 ms、p95 约 39.220 ms、最大约 1.157 s。由此确认主要问题是固定 15 FPS 选择相位与 ARCore Pose 节奏错位，不是 JPEG 队列已被证明耗尽。
+- GPT-5.6-sol 高思考决策：不扩大 ±5 ms 窗口，也不先做 Pose 插值；改为“Pose 驱动、直接 Pose、一对一”选择。每个相机候选图像先进入有界原始候选缓存，等可用的 ARCore TRACKING Pose 后在 ±5 ms 内匹配；匹配后只提交单一 JPEG 编码队列，图像对象立即关闭，避免 ImageReader 堵塞。
+- Android 实现：`frame_selection_policy=pose_driven_direct_pose_match`，候选缓存上限 16，编码队列上限 4，JPEG quality 90；匹配 Pose 不复用、不插值、不伪造，停止时分别报告无 Pose、队列淘汰和编码失败。
+- 最终真机验证会话 `session-1790045215982`：源图像 1186，直接匹配并写入 552，未匹配源图像 634；`policy_selected_count=552`、主动跳过 0、编码提交/完成均 552、队列丢弃 0、编码失败 0、待处理 0、Pose 队列淘汰 0、分项账本未解释数 0。成功帧约 38.3 秒，主机侧图像-Pose 最大时间差 1.388 ms、p95 1.091 ms。
+- PC 接收与质量报告通过：557/557 文件传输和哈希校验通过；`frames.csv`、JPEG、状态、GSX 均为 552 帧；GSX `valid=true`、`errors=[]`；包内 IMU 与会话 IMU SHA-256 相同（`5a2d8f5d19aad27e952f5d35ff3393d5a4863e7321c0bfa28841c96f9edb05a3`）；IMU 共 4078 行。
+- 本轮本地验收：Python unittest 47/47 通过，`compileall` 通过，Android `:app:assembleDebug` 成功；独立复核确认 Pose 数值有限、四元数范数约为 1、帧 ID 连续、时间戳递增，`capture.gsx` 验证通过。
+- 放行边界：以上只证明“真实摄像头 + ARCore Pose 的时间关联与 GSX/PC 接收链路”在一次约 38 秒真机运行中通过，不能宣称 3 次重复、5 分钟稳定性、无源帧丢弃，也不能宣称 COLMAP、Gaussian、GPU 或真实三维重建已完成。最终 GPT-5.6-sol 独立验收因账户用量限制未完成，未将其伪装为验收证据；本次结论以真机、PC 报告和本地测试为依据。
 
 ## 关联知识
 
