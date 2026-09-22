@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-22 10:15
+updated: 2026-09-22 10:20
 source: Codex 对话
 status: 部分确认
 tags:
@@ -144,6 +144,7 @@ tags:
 - Android `gradle assembleDebug` 构建成功并安装到真实小米 2210132C。新真机会话 `session-1790040408549`：`image_count/frame_count/pose_frame_count=504`、504 个 JPEG、`pose_status=TRACKING`、`imu_rows=4203`（accelerometer 2102、gyroscope 2101）、`max_pose_delta_ns=2111851`、`pending_image_count=119`、`unmatched_image_count=718`。
 - 新会话 PC 接收与报告：传输清单/实际文件 509/509，质量报告 `PASS`；GSX `valid=true`、`errors=[]`、`warnings=[]`、`frame_count=504`、`checked_files=507`。包内外 IMU 均为 280642 bytes，字节级一致，SHA-256 为 `0cb1f8c0052f79f5a78c88530547c8a11fd8896f2041563ba6ddca2bfbfc7120`。
 - GPT-5.6-sol 高思考最终验收：**OK（范围限定）**。本轮只证明 IMU 已成为 GSX 自包含数据并通过严格校验；不证明相机与 IMU 已完成传感器融合，不证明无丢帧，也不代表 COLMAP、Gaussian、GPU 或真实三维重建已完成。718 个源图像未匹配、119 个停止时待处理，均已在报告中披露。
+- 指标口径：`source_image_count` 是相机回调中观察到的源图像数，`image_count` 是成功写入且找到 ARCore Pose 的图像数；`unmatched_image_count` 是两者差值，可能包含编码队列满时未进入 JPEG、±5 ms 内找不到 Pose 或等待队列淘汰等多种原因，不能单独解释为某一种故障。`pending_image_count` 表示停止时仍在等待匹配的图像数。
 
 ## 关联知识
 
