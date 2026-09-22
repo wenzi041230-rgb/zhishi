@@ -146,6 +146,15 @@ tags:
 - GPT-5.6-sol 高思考最终验收：**OK（范围限定）**。本轮只证明 IMU 已成为 GSX 自包含数据并通过严格校验；不证明相机与 IMU 已完成传感器融合，不证明无丢帧，也不代表 COLMAP、Gaussian、GPU 或真实三维重建已完成。718 个源图像未匹配、119 个停止时待处理，均已在报告中披露。
 - 指标口径：`source_image_count` 是相机回调中观察到的源图像数，`image_count` 是成功写入且找到 ARCore Pose 的图像数；`unmatched_image_count` 是两者差值，可能包含编码队列满时未进入 JPEG、±5 ms 内找不到 Pose 或等待队列淘汰等多种原因，不能单独解释为某一种故障。`pending_image_count` 表示停止时仍在等待匹配的图像数。
 
+## 未匹配帧分项诊断与第一轮修复
+
+- 2026-09-22 对最新真实会话 `session-1790040408549` 做了原因分析：35.04 秒内 `source=1222`、`matched=504`，已保存帧中位间隔约 66.6ms（约 15 FPS），成功帧最大 Pose 时间差 2.11ms、p95 约 2.07ms，说明长期保存吞吐/队列策略比 ±5ms Pose 窗口更可疑。
+- GPT-5.6-sol 高思考决策：不要先扩大队列或并行编码；长期吞吐不足时这只会延迟丢弃。保持 Camera2/ARCore 约 30FPS，只在 YUV/JPEG 之前按 sensor timestamp 选择约 15FPS；保持 JPEG quality 90、编码队列上限 4；如果仍过载，再以 JPEG quality 85 做单变量 A/B。此前真机历史还表明强制相机 15FPS 会导致 ARCore 无 Pose，因此本轮只对保存路径限流。
+- Android `capture_status.json` 新增 `policy_selected_count`、`policy_skipped_count`、`selected_unmatched_image_count` 以及编码/队列/Pose 淘汰/时间戳间隔等计数；`unmatched_image_count` 继续保留源图像总差额，报告同时给出主动跳过和选中后失败，避免把主动策略误报成故障。
+- `engine/capture_report.py` 新增分项账本和 Markdown 展示；旧会话仍兼容但会提示缺少诊断计数。新增回归测试覆盖分项计数报告。
+- 第一轮修复已完成静态验收：Python unittest `47/47` 通过，`compileall` 通过，Android `gradle :app:assembleDebug` 构建成功，APK 已安装到真实小米 2210132C（ADB `9ec40c76`）。
+- 真机重测尚未完成：设备当前处于锁屏，应用窗口被 `NotificationShade`/Keyguard 遮挡，不能安全开始摄像头采集；因此本轮不能宣称“未匹配问题已解决”。解锁后的验收门槛为：主动选中帧 `queue_full_drop=0`、编码/Pose失败均可解释、最终 `pending=0`、选中帧保存率至少 99%、分项账本 `unexplained=0`，并完成至少一次 35–60 秒真实采集后再决定是否做 JPEG quality 85 A/B。
+
 ## 关联知识
 
 - [[对话知识/2026/2026-09/2026-09-22-GS-Capture-Studio-未匹配帧诊断|未匹配帧根因与安全修复门禁]]
