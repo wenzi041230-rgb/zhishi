@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-21 15:05
+updated: 2026-09-22 10:15
 source: Codex 对话
 status: 部分确认
 tags:
@@ -134,6 +134,16 @@ tags:
 - 质量报告明确警告 437 个源图像中 300 个未匹配、120 个待处理；因此不能宣称无丢帧。GSX 本身仍未打包 IMU，原始 IMU 在会话目录 `records/imu.csv`；当前结果不代表 COLMAP、Gaussian 训练、GPU 渲染或真实三维重建。
 - 第二次尝试重新接收时 ADB 设备瞬时消失，脚本正确失败且没有留下 `.partial`；已有真实接收会话经返工后的报告程序重新验证通过，不需要重新采集。
 - GPT-5.6-sol 高思考第二次独立验收：**OK（限定范围放行）**；确认两个 P1 已修复，允许进入下一步非 GPU 工作。
+
+## IMU 纳入 Android GSX
+
+- GPT-5.6-sol 高思考决策：选择先补齐 Android `camera_stream` GSX 的 IMU 自包含能力，再做桌面自动监视；普通无 IMU GSX 保持兼容并继续 warning，`camera_stream` 或 `imu_required=true` 的包必须有 IMU。
+- Python `engine/gsx.py` 新增 IMU 严格校验：精确表头、非空、正时间戳、有限数、仅允许 `accelerometer`/`gyroscope`、两类传感器均存在、各自时间戳严格递增、与图像 Pose 时间范围重叠；仅对 Android 采集类型强制存在。
+- Android `GsxCaptureWriter` 新增带 IMU 文件的写包路径；`CaptureRecorder` 将已关闭的 `records/imu.csv` 原样写入 `imu/imu.csv`，并在 manifest 声明 `capture_kind=camera_stream`、`imu_required=true`，IMU 同步进入 SHA-256 checksums。GSX 规范补充兼容策略和校验要求。
+- 回归测试扩展到 46/46；覆盖普通无 IMU 包兼容、Android 缺失 IMU、IMU 格式/传感器/时间边界、包内外 IMU 不一致和旧有报告门禁。`compileall`、`scripts/verify_mvp.py`（`OFFLINE MVP: PASS`、`REAL RECONSTRUCTION: NOT TESTED`）均通过。
+- Android `gradle assembleDebug` 构建成功并安装到真实小米 2210132C。新真机会话 `session-1790040408549`：`image_count/frame_count/pose_frame_count=504`、504 个 JPEG、`pose_status=TRACKING`、`imu_rows=4203`（accelerometer 2102、gyroscope 2101）、`max_pose_delta_ns=2111851`、`pending_image_count=119`、`unmatched_image_count=718`。
+- 新会话 PC 接收与报告：传输清单/实际文件 509/509，质量报告 `PASS`；GSX `valid=true`、`errors=[]`、`warnings=[]`、`frame_count=504`、`checked_files=507`。包内外 IMU 均为 280642 bytes，字节级一致，SHA-256 为 `0cb1f8c0052f79f5a78c88530547c8a11fd8896f2041563ba6ddca2bfbfc7120`。
+- GPT-5.6-sol 高思考最终验收：**OK（范围限定）**。本轮只证明 IMU 已成为 GSX 自包含数据并通过严格校验；不证明相机与 IMU 已完成传感器融合，不证明无丢帧，也不代表 COLMAP、Gaussian、GPU 或真实三维重建已完成。718 个源图像未匹配、119 个停止时待处理，均已在报告中披露。
 
 ## 关联知识
 
