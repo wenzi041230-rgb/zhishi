@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-23 10:25
+updated: 2026-09-23 10:38
 source: Codex 对话
 status: 部分确认
 tags:
@@ -202,6 +202,15 @@ tags:
 - 第二个阻断项只部分关闭：`run_adb` 已把无法启动 ADB 的 `OSError` 转为 `AdbUnavailableError`，真实缺失可执行文件可正确得到 `ADB_ERROR`；导入阶段本地磁盘 `OSError` 也得到 `IMPORT_ERROR`。但是 `desktop/session_monitor.py` 的文件清单阶段仍显式将原始 `OSError` 映射为 `WAITING_FOR_DEVICE`。独立注入 `list_files -> OSError(5, "local enumeration failure")` 稳定复现总状态和事件状态均为 `WAITING_FOR_DEVICE`。
 - 现有 56 项测试全部通过、`compileall` 通过，但新增测试只覆盖导入阶段本地磁盘错误，没有覆盖文件清单阶段的原始本地 `OSError`；因此测试绿灯不能关闭该分类缺口。放行前需将该分支归为 `IMPORT_ERROR` 或明确的本地错误，并增加对应回归测试后重跑。
 - NG 范围仅为桌面自动导入/watcher 的可靠性放行；正式终态原子性、真实 FAIL 保留、16 个历史报告和手机采集链路的既有证据不因此失效，也不涉及 COLMAP、Gaussian、GPU 或视觉质量。
+
+## 桌面端自动导入最终验收
+
+- 2026-09-23 由 GPT-5.6-sol 高思考执行只读最终复核，裁决为 **PASS（范围限定）**，项目代码未修改。上一轮唯一阻断项已关闭：`desktop/session_monitor.py` 在 `list_files` 清单枚举阶段捕获原始本地 `OSError` 后记录 `IMPORT_ERROR` 并继续扫描，不再伪装为 `WAITING_FOR_DEVICE`；新增回归测试 `test_local_file_listing_error_is_not_reported_as_device_loss`。
+- 原子终态保持成立：导入先在 `.session-<id>.partial` 中完成传输清单、质量报告，再用 `os.replace` 提升为正式目录；报告失败不产生正式目录，保留 partial，二次扫描进入 `BLOCKED_PARTIAL`。`AdbUnavailableError`、设备 `AdbError` 和本地 `OSError` 分别归类为 `ADB_ERROR`、`WAITING_FOR_DEVICE`、`IMPORT_ERROR`。
+- 独立重跑 Python unittest 57/57 通过，Python 文件编译检查通过；缺失 ADB 实测为 `ADB_ERROR`，指定未连接设备为 `WAITING_FOR_DEVICE`，第二 watcher 被进程锁拒绝并返回退出码 3。
+- 真实原子会话 `session-1789970977358` 的正式目录、JSON/Markdown 质量报告和传输清单均存在，partial 不存在，报告逻辑会话名正确；142 个清单文件逐一字节数和 SHA-256 校验失败 0，二扫为 `ALREADY_IMPORTED` / `NO_NEW_SESSION`。该会话质量为 FAIL 是旧 GSX 缺少包内 IMU 的采集内容问题，watcher 已如实保存终态，不属于导入故障。
+- 批量实证保持为 16 份报告、12 PASS/4 FAIL、正式目录缺报告或清单 0、partial 0、报告会话名错配 0；二扫不重复导入，不完整会话继续标记 `WAITING_COMPLETE`。
+- 放行范围仅包括桌面端会话发现、ADB 自动导入、传输清单校验、质量报告生成、原子终态、错误分类、重复扫描去重和批量 watcher。非阻断边界：partial 仍需人工检查或清理；混合事件时运维应同时读取 `events`，不能只看顶层状态。本结论不证明 Android 采集质量、COLMAP/Gaussian、GPU、开机常驻、长期无人值守或断电级恢复能力。
 
 ## 关联知识
 
