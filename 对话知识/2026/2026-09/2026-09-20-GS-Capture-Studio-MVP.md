@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-22 16:10
+updated: 2026-09-23 09:23
 source: Codex 对话
 status: 部分确认
 tags:
@@ -174,6 +174,16 @@ tags:
 - 该长测编码、队列、pending、Pose 淘汰、无 Pose 和未解释计数均为 0；Pose 为 `TRACKING` 且 complete，GSX 有效，包内外 IMU SHA-256 一致，传输清单有效，`gsx_exported=true`，停止和导出后应用进程仍存活。
 - 独立验收结论：**PASS（范围限定）**。唯一一次 `direct_camera_image_not_available` 是已分类、可计量的暂时不可用，不是复制/编码/队列/导出失败；直接获取率仍显著高于 95% 门槛，也没有造成超过 250 ms 的输出空洞，因此 warning 不改变总体验收等级，不需要降为 conditional PASS。
 - 放行范围仅为“真实手机摄像头 + 同帧 ARCore Pose + IMU + GSX 导出 + PC 接收完整性与约 5 分钟稳定性”。不能据此宣称 COLMAP、Gaussian 训练、GPU 渲染、视觉重建质量或完整产品 V1.0 已通过。
+
+## 桌面端自动导入与会话管理架构决策
+
+- 2026-09-23 决定采用方案 B：Python 长驻 watcher 轮询 ADB，并提供 `--once`；其实现形态必须是“可独立测试的单次扫描核心 + 很薄的循环”，而不是把业务规则写进无限循环。
+- 现有 `scripts/import_android_capture.py` 继续作为单会话导入能力，负责 `.partial`、原子完成目录、`transfer_manifest.json` 和质量报告；watcher 只负责发现完整会话、按设备和会话去重、串行调用导入、汇总状态和在 ADB 恢复后继续工作。
+- 文件系统是事实来源：最终会话目录表示已导入，既有 `.partial` 表示需要人工检查，watcher 不覆盖、不删除、不自动续传；`monitor_status.json` 仅是可重建的运行视图，必须原子写入，不能作为唯一数据库。
+- 建议落盘为 `runtime/imported_captures/<safe-serial>/session-*`，避免多设备同名会话碰撞；同一输出根目录只允许一个 monitor 实例，使用 Windows 进程级文件锁防止并发重复导入。
+- 质量 `PASS` 和 `FAIL` 都是已完成导入的终态：FAIL 必须保留报告并停止自动重试；无设备、ADB 暂时断开和没有新会话是可恢复状态，不得使长驻进程崩溃。
+- MVP 不包含桌面 GUI、SQLite、Windows 服务/安装器、任务计划自动配置、并行多设备导入、断点续传、自动删除手机数据、自动清理 `.partial`、COLMAP、Gaussian、GPU 或云同步。
+- 最小验收包括：重复扫描不重复导入；既有 `.partial` 零修改并报告阻塞；PASS/FAIL 正确落盘；无设备不崩溃；ADB 中断后重连可继续；状态文件始终为有效 JSON；两实例并发被锁拒绝；所有自动测试通过，并完成一次 Windows `--once` 假 ADB 隔离测试。
 
 ## 关联知识
 
