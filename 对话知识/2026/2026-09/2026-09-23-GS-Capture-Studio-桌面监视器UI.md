@@ -47,6 +47,7 @@ tags:
 
 ## 关联知识
 
+- [[对话知识/2026/2026-09/2026-09-23-GS-Capture-Studio-Windows便携包|Windows x64 便携包构建与静态验收]]
 - [[对话知识/2026/2026-09/2026-09-20-GS-Capture-Studio-MVP|GS Capture Studio V1.0 MVP 与自动导入验收]]
 - [[对话知识/2026/2026-09/2026-09-22-GS-Capture-Studio-未匹配帧诊断|未匹配帧根因与安全修复门禁]]
 - [[对话知识/00_对话知识索引]]

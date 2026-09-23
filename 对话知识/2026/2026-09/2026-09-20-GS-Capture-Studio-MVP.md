@@ -212,6 +212,15 @@ tags:
 - 批量实证保持为 16 份报告、12 PASS/4 FAIL、正式目录缺报告或清单 0、partial 0、报告会话名错配 0；二扫不重复导入，不完整会话继续标记 `WAITING_COMPLETE`。
 - 放行范围仅包括桌面端会话发现、ADB 自动导入、传输清单校验、质量报告生成、原子终态、错误分类、重复扫描去重和批量 watcher。非阻断边界：partial 仍需人工检查或清理；混合事件时运维应同时读取 `events`，不能只看顶层状态。本结论不证明 Android 采集质量、COLMAP/Gaussian、GPU、开机常驻、长期无人值守或断电级恢复能力。
 
+## Windows x64 便携包构建（2026-09-23）
+
+- 新增 Windows one-folder/windowed 构建脚本 `scripts/package_windows.ps1` 与使用说明 `docs/WINDOWS_PORTABLE.md`。脚本固定 Python 3.12 x64 / PyInstaller 6.20.0，构建暂存目录在系统临时路径；目标已存在时拒绝覆盖。
+- 当前主机 Windows 11 x64 构建成功：目录包 27,899,024 字节；ZIP 11,996,935 字节、998 个条目；旁侧 SHA-256 文件匹配，哈希 `A2B78D0BEF150C8ADECCA422F9A294B141D2AAFDFF1FFAAAE0F8EC5027984571`。
+- ZIP 静态检查未发现 `runtime/`、采集会话、GSX/JPEG 样例、测试、samples 或 mobile 目录；随包有 Python、Tcl/Tk、OpenSSL、PyInstaller 与项目许可文本及构建信息。EXE 未签名。
+- 冻结版从 Windows `Personal` Known Folder 解析默认数据目录为“文档/GS Capture Studio”；解析失败或目录不可写时要求用户选择，不写回程序包。ADB 保持外部依赖。
+- 全量测试 79/79 通过，`compileall` 通过。只放行自动构建和静态包完整性，不代表 EXE 启动、无 Python 环境、只读目录、中文路径、ADB 或真机导入已验证。
+- 通过明确参数请求 GPT-5.6-sol/high 的复核工具未能提供可验证的模型身份且曾引用旧包哈希，因此未把该意见登记为指定模型最终验收；当前结论依据本机测试和当前 ZIP 的哈希/目录检查。
+
 ## 桌面监视器窗口 MVP 验收（2026-09-23）
 
 - 在 watcher v2 状态契约之上实现 Tkinter 桌面窗口：默认不连接手机，点击“开始监视”后才启动 ADB；提供保存目录、可选序列号、轮询间隔、任务队列、文件计数进度、最近完成文件、质量结果和面向用户的错误建议。
@@ -223,4 +232,5 @@ tags:
 ## 关联知识
 
 - [[对话知识/2026/2026-09/2026-09-22-GS-Capture-Studio-未匹配帧诊断|未匹配帧根因与安全修复门禁]]
+- [[对话知识/2026/2026-09/2026-09-23-GS-Capture-Studio-Windows便携包|Windows x64 便携包构建与静态验收]]
 - [[对话知识/00_对话知识索引]]
