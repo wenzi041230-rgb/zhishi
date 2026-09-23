@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-23 10:07
+updated: 2026-09-23 10:25
 source: Codex 对话
 status: 部分确认
 tags:
@@ -193,6 +193,15 @@ tags:
 - 现有 `test_local_storage_error_is_not_reported_as_device_loss` 只覆盖 `import_session` 抛出 `OSError`，未覆盖设备选择、会话枚举、远端清单，也未覆盖“正式目录已生成但质量报告失败”的第二次扫描行为。
 - 放行前最低修复门槛：正式目录必须只在传输清单和质量报告都写成后出现，或扫描时把缺少报告的正式目录识别为明确错误并支持安全恢复；所有本地 `OSError` 必须与 ADB/设备断开分开归类；增加上述两个故障注入回归测试。修复后应重新执行 54 项以上测试、真机 `--once` 首次导入/二次去重、无设备和缺少 ADB 两种独立场景、双实例锁测试。
 - NG 范围只针对“桌面自动导入与会话监视可作为可靠 MVP 放行”的声明；已成功落盘的 16 个真实会话及其报告仍是有效证据，4 个质量 FAIL 也正确反映旧数据缺陷。本结论不涉及手机采集链路、COLMAP、Gaussian、GPU 或视觉重建质量。
+
+## 桌面端自动导入修复复核
+
+- 2026-09-23 只读复核结论仍为 **NG（范围限定）**，项目代码未修改。第一个阻断项已关闭：直接导入和 watcher 都先在 `.session-<id>.partial` 中拉取、生成质量报告，再通过 `os.replace` 提升为正式目录；报告构建失败故障注入返回 `IMPORT_ERROR`，正式目录不出现，partial 保留，下一次扫描为 `BLOCKED_PARTIAL`。
+- 真实 E 盘会话 `session-1789970977358` 的正式目录同时包含 `quality_report.json`、`quality_report.md` 和 `transfer_manifest.json`，partial 不存在；报告逻辑会话名正确，142 个清单文件的字节数和 SHA-256 独立复核无误。报告保持 `FAIL`，原因为旧版 `camera_stream` GSX 缺少包内 `imu/imu.csv`，没有伪装为 PASS；二次扫描为 `ALREADY_IMPORTED` / 总状态 `NO_NEW_SESSION`。
+- 历史批量输出独立复核仍为 16 份报告、12 PASS、4 FAIL、传输完整性失败 0、正式目录缺报告 0、partial 0；旧不完整会话继续为 `WAITING_COMPLETE`。
+- 第二个阻断项只部分关闭：`run_adb` 已把无法启动 ADB 的 `OSError` 转为 `AdbUnavailableError`，真实缺失可执行文件可正确得到 `ADB_ERROR`；导入阶段本地磁盘 `OSError` 也得到 `IMPORT_ERROR`。但是 `desktop/session_monitor.py` 的文件清单阶段仍显式将原始 `OSError` 映射为 `WAITING_FOR_DEVICE`。独立注入 `list_files -> OSError(5, "local enumeration failure")` 稳定复现总状态和事件状态均为 `WAITING_FOR_DEVICE`。
+- 现有 56 项测试全部通过、`compileall` 通过，但新增测试只覆盖导入阶段本地磁盘错误，没有覆盖文件清单阶段的原始本地 `OSError`；因此测试绿灯不能关闭该分类缺口。放行前需将该分支归为 `IMPORT_ERROR` 或明确的本地错误，并增加对应回归测试后重跑。
+- NG 范围仅为桌面自动导入/watcher 的可靠性放行；正式终态原子性、真实 FAIL 保留、16 个历史报告和手机采集链路的既有证据不因此失效，也不涉及 COLMAP、Gaussian、GPU 或视觉质量。
 
 ## 关联知识
 
