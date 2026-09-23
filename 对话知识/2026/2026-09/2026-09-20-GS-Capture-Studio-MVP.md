@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-20 16:30
-updated: 2026-09-23 09:23
+updated: 2026-09-23 10:07
 source: Codex 对话
 status: 部分确认
 tags:
@@ -184,6 +184,15 @@ tags:
 - 质量 `PASS` 和 `FAIL` 都是已完成导入的终态：FAIL 必须保留报告并停止自动重试；无设备、ADB 暂时断开和没有新会话是可恢复状态，不得使长驻进程崩溃。
 - MVP 不包含桌面 GUI、SQLite、Windows 服务/安装器、任务计划自动配置、并行多设备导入、断点续传、自动删除手机数据、自动清理 `.partial`、COLMAP、Gaussian、GPU 或云同步。
 - 最小验收包括：重复扫描不重复导入；既有 `.partial` 零修改并报告阻塞；PASS/FAIL 正确落盘；无设备不崩溃；ADB 中断后重连可继续；状态文件始终为有效 JSON；两实例并发被锁拒绝；所有自动测试通过，并完成一次 Windows `--once` 假 ADB 隔离测试。
+
+## 桌面端自动导入 MVP 独立验收
+
+- 2026-09-23 只读独立验收结论为 **NG**。通过项包括：Python unittest 54/54、`compileall`、16 个真实会话导入、16 份质量报告、12 PASS/4 FAIL 如实保留、传输清单完整性全部有效、第二次扫描不重复复制、缺失 `capture.gsx` 会话保持 `WAITING_COMPLETE`、单实例锁实测拒绝第二个 watcher。
+- 阻断项一：`import_session` 先将 `.partial` 原子改名为正式目录，随后 watcher 才生成质量报告。故障注入证明，若报告构建或写入发生本地 `OSError`，第一次扫描返回 `IMPORT_ERROR`，但正式目录已存在且没有报告；第二次扫描会直接报告 `ALREADY_IMPORTED`，该会话永久不再补报告。这违反“正式目录代表已完成导入”的事实源约定。
+- 阻断项二：本地 `OSError` 只在导入/报告阶段被归为 `IMPORT_ERROR`；设备选择、会话枚举和远端文件清单阶段仍将 `OSError` 归为 `WAITING_FOR_DEVICE`。隔离状态文件中的 `WinError 2` 实际表示本地程序不存在，却被写成 `WAITING_FOR_DEVICE`；定向故障注入可稳定复现。
+- 现有 `test_local_storage_error_is_not_reported_as_device_loss` 只覆盖 `import_session` 抛出 `OSError`，未覆盖设备选择、会话枚举、远端清单，也未覆盖“正式目录已生成但质量报告失败”的第二次扫描行为。
+- 放行前最低修复门槛：正式目录必须只在传输清单和质量报告都写成后出现，或扫描时把缺少报告的正式目录识别为明确错误并支持安全恢复；所有本地 `OSError` 必须与 ADB/设备断开分开归类；增加上述两个故障注入回归测试。修复后应重新执行 54 项以上测试、真机 `--once` 首次导入/二次去重、无设备和缺少 ADB 两种独立场景、双实例锁测试。
+- NG 范围只针对“桌面自动导入与会话监视可作为可靠 MVP 放行”的声明；已成功落盘的 16 个真实会话及其报告仍是有效证据，4 个质量 FAIL 也正确反映旧数据缺陷。本结论不涉及手机采集链路、COLMAP、Gaussian、GPU 或视觉重建质量。
 
 ## 关联知识
 
