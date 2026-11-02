@@ -281,3 +281,12 @@ tags:
 - 最新701帧复核为文件记录PASS、同步REVIEW_REQUIRED、整体FAIL，36帧ID116～151保留。原quality_report在本地outputs备份后更新派生报告，原始图像、记录、GSX和传输文件未改，更新后重新检查清单/GSX通过。
 - 改动入口engine/capture_report.py、engine/capture_timing.py、tests/test_clock_review.py及既有时间戳样例；新增docs/CLOCK_REVIEW_FIX_20261102.md与用户修复说明。Android未改，无新APK。新Windows候选GS-Capture-Studio-Windows-x64-20261102-clock-fix.zip构建成功；核对冻结代码含新逻辑、ZIP完整性及不含采集数据，SHA256为0d3ca8291b1546c89b559b853b1fbabb10a06a334d56a12e961c8313b7d2052a。未做新窗口交互、手机采集或干净机器验收。
 - 剩余：实际物理同步精度和局部Pose几何偏差仍未标定，后续需独立深度/重投影、畸变/滚动快门与状态变化证据。此次修复应称“判定/校验异常修复”，不能称“所有同步/Pose异常已消除”。
+
+## 2026-11-02 旋影工坊与手机本地轻量训练可行性
+
+- 用户询问能否把旋影工坊移植到手机，进行轻量数据集整理与训练。本轮为可行性核对，未授权或开始大规模移植。知识库没有既有专项记录，本次按Spirula Studio评估；应避免与CUDA为主的LichtFeld Studio混淆。
+- 核对上游官方README与构建源码：Spirula当前有可移植C++/Vulkan训练引擎及CUDA后端，官方列出Windows/Linux/macOS，未证明Android已受支持。GUI、SfM、SAM可分模块裁剪，但不能把关掉GUI直接等同于生成Android库；仍需NDK交叉编译、共享库接口和生命周期适配。
+- 候选路线：复用GS Capture手机端，先做关键帧/模糊重复过滤、缩放与内参同步、覆盖检查和训练格式导出；用ARCore Pose作初值，加特征匹配/三角化及局部重投影优化初始化点云，再接裁剪Vulkan训练核心和轻量预览。仅有Pose不等于点云初始化或完整SfM已经完成；当前同步待复核/局部Pose问题继续保留。
+- 初步实验设计50～150关键帧、长边512～768、5万～10万高斯与SH0，均为待测设计输入，不是容量、速度或质量承诺。要测前向/反向梯度、排序/增密、峰值内存、温控及恢复。Vulkan版本号不保证BDA、timeline/subgroup等实际功能和驱动兼容；浮点原子/64位回退也需实测。
+- PocketGS论文已报告商品手机上的几何构建、初始化与3DGS优化，支持方向可行，不能套用其速度/内存到本项目。当前USB手机未检测到，未核对本机GPU功能或预算。建议先数据集工作台，再验证小场景真正本地训练；大场景桌面精训可作为扩展，不能称远程任务为端侧训练。
+- 本地可行性说明outputs/GS-Capture-20261102-手机数据集与轻量训练可行性.md。来源：https://github.com/harry7557558/spirula-studio 、上游cmake/SsOptions.cmake与src/backend/vulkan/README.md；https://arxiv.org/abs/2601.17354 。只保存抽象设计与来源，无源码、手机标识或原始采集数据发布。
