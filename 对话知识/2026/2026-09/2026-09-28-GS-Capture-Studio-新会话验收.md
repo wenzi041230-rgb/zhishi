@@ -207,3 +207,23 @@ tags:
 
 - 下次实机应先确认Android相机/Image时间戳同帧一致、相机时间源、曝光/滚动快门覆盖与原始差随时间变化，再对比元数据写盘计数、帧率和丢弃。必要时才进一步做曝光控制、Pose重采样或视觉/IMU时间偏置标定，并用独立图像运动/重投影证据评估。
 - 官方参考：https://developers.google.com/ar/reference/java/com/google/ar/core/Frame 、https://developers.google.com/ar/reference/java/com/google/ar/core/Camera 、https://developer.android.com/reference/android/hardware/camera2/CaptureResult 。
+
+## 2026-11-02 四轮真机同步诊断与触发对照
+
+### 已确认
+
+- 用户完成四轮采集，有效跨度约16.31、34.75、32.18、29.54秒。先前离线“尚未实测”结论已被本节更新；没有达到每条45～60秒，也不构成长时间或跨设备验收。
+- CaptureCallback SENSOR_TIMESTAMP 与 Frame.getAndroidCameraTimestamp 精确键匹配覆盖四轮全部帧；相机声明 REALTIME。Image.getTimestamp 数值与它们不同不能直接判错配：源相关时间戳语义尚需标定。分析器已更正为 timestamp_mapping_unverified；记录覆盖、重复、回调键不一致仍报错。回归先红后绿，全量 Python112项通过，纯Java通过。
+- 本机四轮均观察到 Image−AndroidCamera−exposure/2 为约7774309～7774309.5ns；这是时间戳编码关系，绝非亚纳秒物理精度。未覆盖原始时间戳、未给Pose加固定补偿。skew约10.098619ms，剩余偏置来源未知。
+- 基线回调触发复采1036帧，29.79FPS，曝光开始到应用取图均值109.96ms、P95为118.56ms。第三轮双触发965帧，29.96FPS，均值97.33ms、P95为106.16ms，均值降低12.63ms/约11.5%。两条完整文件分别1042/1042、971/971校验通过，GSX有效、质量PASS。
+- 第三轮1813次更新中816次重复图像时间戳尝试被跳过，无重复JPEG和编码队列丢弃；质量报告仍有取图率低于95%的警告。camera.json四轮各写2次，其余未变参数写盘被跳过。
+- 第四轮仅图像到达触发884帧，29.89FPS，901次更新、零重复时间戳跳过，均值91.76ms、P95为95.60ms，但33帧触发保留的5ms原始差筛查；曝光范围扩大到10～16.67ms，不能把差异全部归因于触发方式。该筛查不等于物理同步误差判定。
+- 第一轮484帧完整490/490文件、GSX有效；旧报告曾包含错误的时间戳相等假设。用新分析器另存复核报告后仍FAIL，明确仅3条遗留5ms原始差筛查，不改原始会话。
+
+### 决策与当前状态
+
+- 当前源码与手机恢复为第三轮双触发候选，重新构建成功，重建APK与已实测APK的SHA256一致。仅图像触发源码和全部实验APK另存，没有放宽原有质量门槛。候选仍有重复更新开销，不宣称最终最优。
+- 本地交付：outputs/GS-Capture-20261102-同步优化对照报告.md、同步第一条重新分析JSON；项目docs/TIME_SYNC_DEVICE_RESULTS_20261102.md；frame-trigger-experiment APK为当前候选。原Windows/基线发布包未重打包，不能当作包含新分析器的发布包。
+- 待做：独立图像运动/IMU或重投影时间偏置标定、曝光中心/外参核对、受控A/B与长时间热稳定测试、减少双触发重复工作、实际重建验收。当前改进是取图交付延迟，物理Pose同步精度仍未测量。
+
+- 第四轮最终完整导入890/890文件，校验通过、GSX有效；质量FAIL仅33条遗留原始差筛查，未接受为当前候选。
