@@ -290,3 +290,13 @@ tags:
 - 初步实验设计50～150关键帧、长边512～768、5万～10万高斯与SH0，均为待测设计输入，不是容量、速度或质量承诺。要测前向/反向梯度、排序/增密、峰值内存、温控及恢复。Vulkan版本号不保证BDA、timeline/subgroup等实际功能和驱动兼容；浮点原子/64位回退也需实测。
 - PocketGS论文已报告商品手机上的几何构建、初始化与3DGS优化，支持方向可行，不能套用其速度/内存到本项目。当前USB手机未检测到，未核对本机GPU功能或预算。建议先数据集工作台，再验证小场景真正本地训练；大场景桌面精训可作为扩展，不能称远程任务为端侧训练。
 - 本地可行性说明outputs/GS-Capture-20261102-手机数据集与轻量训练可行性.md。来源：https://github.com/harry7557558/spirula-studio 、上游cmake/SsOptions.cmake与src/backend/vulkan/README.md；https://arxiv.org/abs/2601.17354 。只保存抽象设计与来源，无源码、手机标识或原始采集数据发布。
+
+
+## 2026-11-02 手机数据集工作台第一阶段候选实现
+
+- 用户同意按阶段推进：先手机数据集整理，再几何初始化/位姿优化，最后小场景 Vulkan 训练。已新增独立 Android 工作台：完成会话选择、40/80/150 关键帧目标、清晰度/相近视角过滤、默认排除原始时间差超过5ms的待复核帧、512/768/1024最长边缩图及对应内参缩放。
+- 导出包含图片、transforms.json、COLMAP文本相机与Pose、筛选账本、源诊断元数据和逐文件SHA256清单。坐标按ARCore OpenGL相机转换，世界Y-up转Z-up；只提供Pose初值，空points3D，training_ready=false。零畸变是缺省假设，筛选阈值为启发式，不能宣称完成校准、点云、重建或测距精度验收。
+- 已验证：最终主程序与设备测试包构建通过；纯Java选择/坐标测试通过；模拟器设备测试覆盖Bitmap、缩图内参、ZIP哈希、过滤、开始前及导出中取消、变化内参/损坏输入拒绝、源文件不修改。真实采集701帧回放得到70张，默认排除36张待复核帧；512版本为512×384。独立SciPy坐标计算及ZIP CRC/逐文件哈希/全部图像尺寸检查通过。无Python引擎改动，本次未重跑历史127项检查。
+- 开放异常：模拟器系统Downloads另存曾拒绝URI写权限并产生空副本，应用内完整ZIP保留。已补充显式URI读写/持久授权请求与授权保留，但修订后尚未复测，根因未确认，不能标记修复。模拟器转入其他应用后停止界面操作，避免干扰。USB手机未连接，未安装候选版；手机性能、旋转和系统另存完整验收待做。
+- 交付本地候选APK、512回放样例ZIP、独立校验JSON及阶段交付MD；仅知识摘要同步，未发布源码、APK、原始图像或设备标识。详细实现说明在项目docs/MOBILE_DATASET_WORKBENCH_20261102.md。后续先完成另存和手机工作台验收，再做几何初始化/位姿优化；没有开始Vulkan训练。
+- 格式与权限依据：https://colmap.github.io/format.html 、https://docs.nerf.studio/quickstart/data_conventions.html 、https://developer.android.com/training/data-storage/shared/documents-files 。
