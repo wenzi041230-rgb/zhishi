@@ -186,3 +186,24 @@ tags:
 - 当前 COLMAP 适配器只执行特征提取、匹配、mapper，尚未把保存 Pose 接入尺度约束或相机轨迹对齐；真实重建的米制尺度保留未完成、未验收。后续应统一相机/世界坐标、利用已知相机位置约束或相似变换对齐，并记录训练归一化及逆变换，再用已知长度做尺寸误差评估。
 - ARCore 官方还说明世界估计更新可改变相机/锚点坐标，因此跨帧原始 Pose 的共同参考系与重定位跳变需专项处理，不能仅依据单位字段声称可量尺。此为新增设计风险，非本次已复现缺陷。
 - 参考：Google ARCore fundamental concepts、Java Pose 文档；COLMAP FAQ 的已知相机姿态与坐标配准说明。当前尚无模型尺寸精度或厘米级精度结论。
+
+## 2026-11-02 时间同步离线梳理与重构候选
+
+### 结论更正与基线
+
+- 用户要求先优化算法和检查重构，再连接实机；本轮未连接、安装或新采集。历史验收APK与Windows包保留，本轮另存同步诊断候选APK及说明。
+- 官方说明 Frame.getTimestamp 的时间基准未定义，而 Android 相机时间戳由 SENSOR_INFO_TIMESTAMP_SOURCE 描述；Camera.getPose 对应中心行曝光中心。因此此前3.410971ms应解释为原始Frame/Image时间戳差，不能直接当成真实同步误差。该更正不推翻旧会话完整性/质量PASS。
+- 1185帧只读回放：Frame减图像有符号差中位-2.460483ms、均值约-2.347170ms、最小-3.410971ms、最大+1.191335ms；1173负、9正、3相等。提示系统性差异，时钟域、曝光与关联原因仍待新数据区分，未加固定补偿或插值。
+
+### 源码改动
+
+- 新增纯Java不可变CaptureTiming、256条有界元数据表，按Android相机时间戳精确关联回调，不猜最近记录；新增frame_timing.csv和schema4状态，保留原Frame/Image/Pose及GSX格式。
+- 精确相机参数指纹跳过无变化的camera.json写盘，写入成功才提交缓存；新增写盘/命中计数。诊断CSV每30帧刷新、正常停止完整关闭；原frames/IMU刷新不改。完善多日志创建/关闭失败资源释放。
+- 新增离线时钟域分析与CLI，报告分开显示原始差、同传感器帧关联、曝光覆盖、REALTIME条件下到达延迟；缺失字段保持未知，同帧差为0也不证明物理零误差。新诊断与原帧/传输记录做覆盖核对，旧会话仍兼容；历史5ms筛查门槛暂不改。
+- 全量Python111项通过，最终兼容性调整后相关19项再次通过；纯Java关联/缓存回归通过；Android构建成功。新候选未真机测试，无实际同步/性能提升结论，也未重新打包Windows。
+- 本地outputs保存同步基线JSON、时间同步重构说明及sync-diagnostic APK/校验；不上传源码、安装包或原始会话。
+
+### 下一步与参考
+
+- 下次实机应先确认Android相机/Image时间戳同帧一致、相机时间源、曝光/滚动快门覆盖与原始差随时间变化，再对比元数据写盘计数、帧率和丢弃。必要时才进一步做曝光控制、Pose重采样或视觉/IMU时间偏置标定，并用独立图像运动/重投影证据评估。
+- 官方参考：https://developers.google.com/ar/reference/java/com/google/ar/core/Frame 、https://developers.google.com/ar/reference/java/com/google/ar/core/Camera 、https://developer.android.com/reference/android/hardware/camera2/CaptureResult 。
