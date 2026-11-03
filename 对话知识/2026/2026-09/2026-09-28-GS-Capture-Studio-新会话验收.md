@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-09-28 13:03
-updated: 2026-09-28 14:29
+updated: 2026-11-03 09:24
 source: Codex 对话
 status: 部分确认
 tags:
@@ -300,3 +300,12 @@ tags:
 - 开放异常：模拟器系统Downloads另存曾拒绝URI写权限并产生空副本，应用内完整ZIP保留。已补充显式URI读写/持久授权请求与授权保留，但修订后尚未复测，根因未确认，不能标记修复。模拟器转入其他应用后停止界面操作，避免干扰。USB手机未连接，未安装候选版；手机性能、旋转和系统另存完整验收待做。
 - 交付本地候选APK、512回放样例ZIP、独立校验JSON及阶段交付MD；仅知识摘要同步，未发布源码、APK、原始图像或设备标识。详细实现说明在项目docs/MOBILE_DATASET_WORKBENCH_20261102.md。后续先完成另存和手机工作台验收，再做几何初始化/位姿优化；没有开始Vulkan训练。
 - 格式与权限依据：https://colmap.github.io/format.html 、https://docs.nerf.studio/quickstart/data_conventions.html 、https://developer.android.com/training/data-storage/shared/documents-files 。
+
+
+## 2026-11-03 手机工作台系统另存复测
+
+- 根据用户“下一步”，先闭环上一阶段另存验证。独立启动已有官方 Android 16/API 36.1 模拟器，不占用 MuMu 运行其他应用的界面。USB物理手机未连接，未安装真机。
+- 2026-11-02候选APK未修改源码，真实系统Downloads文件选择器通过：取消后重试、竖屏另存、旋转后横屏另存和同名生成新副本。每份目标ZIP为3559057字节，与既有512数据集源包逐字节一致，SHA-256为2f2a76148d2d2487d450cf5849bb15b76c9ac1c36dc6acea39fbcd6d0fed0cc0。该证据仅覆盖官方模拟器；MuMu URI写权限失败未复现，根因不明，不能标记普遍兼容性修复。
+- 新增scripts/verify_android_dataset_save.py，显式选择独立空闲模拟器、输入源ZIP和独立预期哈希，联合检查真实UI成功状态与目标文件内容。只创建唯一测试ZIP，清理自己的临时文件、恢复旋转设置，下载副本保留供检查；遇未知前台应用停止输入。没有广泛存储权限或系统权限策略变更。
+- 首次横屏脚本失败来自靠近屏幕边缘的自动滑动触发桌面手势，未发现应用崩溃证据；改为内容区域内部滑动后完整通过。故意提供错误预期哈希的负面对照在完成真实保存后以退出码1和哈希不一致断言失败，符合预期；不能把该失败算成产品异常。脚本语法检查通过，未重跑不受影响的引擎全量测试。
+- 交付outputs/GS-Capture-20261103-Android另存复测.md与Android另存验证JSON；项目docs/ANDROID_DATASET_SAVE_CHECK_20261103.md、移动端README和路线图同步更新。沿用原APK，无新手机安装、无点云初始化或训练新实现。下一功能阶段仍为特征匹配/几何点云初始化与Pose优化；手机性能和MuMu兼容性继续待测。
