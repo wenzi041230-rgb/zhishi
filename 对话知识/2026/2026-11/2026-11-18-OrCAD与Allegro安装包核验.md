@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-11-18 20:52
-updated: 2026-11-18 21:09
+updated: 2026-11-19 09:26
 source: Codex 对话
 status: 部分确认
 tags:
@@ -25,5 +25,10 @@ tags:
 ## Capture 16.3 原理图验收
 
 - 当 Windows 报应用程序的并行配置不正确时，查询 Application 日志的 SideBySide 事件。此处事件 33 指出缺少 x86 的 Microsoft.VC80.MFC。安装并验证微软签名的 [Visual C++ 2005 SP1 x86 MFC 更新 KB2538242](https://www.microsoft.com/en-us/download/details.aspx?id=26347) 后，Capture 16.3 p002 进入 Demo Edition。
-- 已实测新建测试原理图、放置导线和将 DSN 写入磁盘。启动程序及测试文件留在目标数据盘。开始菜单入口首次验证能启动 Capture 并到产品选择框，但尚未完成重启后重新打开 DSN 的验证。
+- 已实测新建测试原理图、放置导线和将 DSN 写入磁盘。启动程序及测试文件留在目标数据盘。首次从开始菜单启动时停在产品选择框，随后完成复验。
 - 新建时日志提示 CAP0036，精简包缺少 CAPSYM.OLB 和常用符号库。需要用兼容的 OLB 补齐元件来源。Demo Edition 有设计规模限制，复杂工程保存未测试。
+
+## 2026-11-19 复验
+
+- 旧版 Capture 进程正常响应时，如果窗口未显示，先检查是否有独立的 Cadence Product Choices 对话框。尝试将该对话框切到前台，选择 OrCAD Capture 并勾选 Use as default。退出后从开始菜单入口重新启动，实测直接进入主界面。
+- 已实测打开测试 DSN、添加文字、保存退出，再通过关联的 OPJ 重新打开；原理图页保留了新增文字。默认符号库仍需单独补齐。
