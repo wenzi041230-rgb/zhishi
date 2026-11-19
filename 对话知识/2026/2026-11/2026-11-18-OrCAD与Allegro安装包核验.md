@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-11-18 20:52
-updated: 2026-11-19 09:34
+updated: 2026-11-19 15:49
 source: Codex 对话
 status: 部分确认
 tags:
@@ -38,3 +38,9 @@ tags:
 - 在公开候选中选择 [XiaoSenLuo/CadenceLibrary](https://github.com/XiaoSenLuo/CadenceLibrary/tree/dc3c2caac3ea6ee8727365a3b5f16b059a99ca48)。取其 Symbol 下的十个常用 OLB，涵盖电阻、电容、电感、二极管、LED、三极管、MOSFET、USB、2.54 mm 排针和振荡器。下载后校验各文件与 GitHub blob 一致。
 - 在 Capture 16.3 的 Place → Part → Add Library 可一次多选多个 OLB。正常退出后，软件把路径写到 Capture.ini 的 Part Selector Configured Libraries。实测退出并重新启动后十个库仍能从 Place Part 看到。
 - 用 0603 电阻和电容验证了放置、保存和重新打开。其他类别确认可在库面板中加载。该仓库的 OLB 用于原理图元件，未补齐 CAPSYM.OLB 或验收 PCB 封装。
+
+## DSN 导出 EDIF
+
+- 原理图导出用 OrCAD Capture 的 File → Export Design → EDIF，设置 .EDF 输出路径，配置文件选安装目录附带的 CAP2EDI.CFG。需要导出整份设计时，先在 Project Manager 中选中 .DSN 根节点。Tools → Create Netlist 下的 EDIF 是 .EDN 网表。
+- 本次静态核对的精简包含 CAP2EDI.CFG，但缺少 Capture 可执行文件引用的 cap2edid.dll 与 cap2edll.dll。未实测生成 EDF。遇到导出组件加载错误时，使用带匹配 EDIF 转换组件的完整 Capture 安装。
+- [Cadence 社区的 EDIF 导出步骤](https://community.cadence.com/cadence_technology_forums/pcb-design/f/allegro-x-capture-cis/58322/error-orcap-1153)
