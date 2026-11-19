@@ -1,7 +1,7 @@
 ---
 type: 对话知识
 created: 2026-11-18 20:52
-updated: 2026-11-19 09:26
+updated: 2026-11-19 09:34
 source: Codex 对话
 status: 部分确认
 tags:
@@ -32,3 +32,9 @@ tags:
 
 - 旧版 Capture 进程正常响应时，如果窗口未显示，先检查是否有独立的 Cadence Product Choices 对话框。尝试将该对话框切到前台，选择 OrCAD Capture 并勾选 Use as default。退出后从开始菜单入口重新启动，实测直接进入主界面。
 - 已实测打开测试 DSN、添加文字、保存退出，再通过关联的 OPJ 重新打开；原理图页保留了新增文字。默认符号库仍需单独补齐。
+
+## GitHub 常用元件库
+
+- 在公开候选中选择 [XiaoSenLuo/CadenceLibrary](https://github.com/XiaoSenLuo/CadenceLibrary/tree/dc3c2caac3ea6ee8727365a3b5f16b059a99ca48)。取其 Symbol 下的十个常用 OLB，涵盖电阻、电容、电感、二极管、LED、三极管、MOSFET、USB、2.54 mm 排针和振荡器。下载后校验各文件与 GitHub blob 一致。
+- 在 Capture 16.3 的 Place → Part → Add Library 可一次多选多个 OLB。正常退出后，软件把路径写到 Capture.ini 的 Part Selector Configured Libraries。实测退出并重新启动后十个库仍能从 Place Part 看到。
+- 用 0603 电阻和电容验证了放置、保存和重新打开。其他类别确认可在库面板中加载。该仓库的 OLB 用于原理图元件，未补齐 CAPSYM.OLB 或验收 PCB 封装。
